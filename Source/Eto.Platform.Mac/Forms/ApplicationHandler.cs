@@ -4,12 +4,15 @@ using MonoMac.AppKit;
 using MonoMac.Foundation;
 using Eto.Platform.Mac.Forms.Actions;
 using System.ComponentModel;
+using MonoMac.ObjCRuntime;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms
 {
 	public class ApplicationHandler : WidgetHandler<NSApplication, Application>, IApplication
 	{
 		public NSApplicationDelegate AppDelegate { get; private set; }
+		
+		public bool AddFullScreenMenuItem { get; set; }
 		
 		public static ApplicationHandler Instance {
 			get { return Application.Instance.Handler as ApplicationHandler; }
@@ -18,6 +21,7 @@ namespace Eto.Platform.Mac
 		public ApplicationHandler ()
 		{
 			NSApplication.Init ();
+			EtoBundle.Init();
 			Control = NSApplication.SharedApplication;
 		}
 		
@@ -33,15 +37,28 @@ namespace Eto.Platform.Mac
 			NSTask.LaunchFromPath ("/bin/sh", args);
 		}
 
-		public void InvokeOnMainThread (System.Action action)
+		public void Invoke (System.Action action)
 		{
 			var thread = NSThread.Current;
 			if (thread != null && thread.IsMainThread)
 				action ();
-			else
+			else {
 				Control.InvokeOnMainThread (delegate {
 					action ();
 				});
+			}
+		}
+
+		public void AsyncInvoke (System.Action action)
+		{
+			var thread = NSThread.Current;
+			if (thread != null && thread.IsMainThread)
+				action ();
+			else {
+				Control.BeginInvokeOnMainThread (delegate {
+					action ();
+				});
+			}
 		}
 		
 		public void Restart ()
@@ -58,8 +75,12 @@ namespace Eto.Platform.Mac
 			NSApplication.SharedApplication.NextEvent (NSEventMask.AnyEvent, NSDate.DistantFuture, NSRunLoop.NSDefaultRunLoopMode, true);
 		}
 		
+		
+		
 		public void Run (string[] args)
 		{
+			
+			Control.Delegate = new AppDelegate();
 			NSApplication.Main (args);
 		}
 		
@@ -91,7 +112,16 @@ namespace Eto.Platform.Mac
 			}
 		}
 		
-		public void GetSystemActions (GenerateActionArgs args)
+		public void EnableFullScreen(NSApplicationPresentationOptions options = NSApplicationPresentationOptions.FullScreen | NSApplicationPresentationOptions.AutoHideToolbar | NSApplicationPresentationOptions.AutoHideMenuBar | NSApplicationPresentationOptions.AutoHideDock)
+		{
+			if (Control.RespondsToSelector (new Selector ("setPresentationOptions:"))) {
+				if (options.HasFlag (NSApplicationPresentationOptions.FullScreen))
+					AddFullScreenMenuItem = true;
+				Control.PresentationOptions = options;
+			}
+		}
+		
+		public void GetSystemActions (GenerateActionArgs args, bool addStandardItems)
 		{
 			args.Actions.AddButton ("mac_hide", string.Format ("Hide {0}|Hide {0}|Hides the main {0} window", Widget.Name), delegate {
 				NSApplication.SharedApplication.Hide (NSApplication.SharedApplication);
@@ -115,6 +145,53 @@ namespace Eto.Platform.Mac
 			args.Actions.Add (new MacButtonAction ("mac_selectAll", "Select All", "selectAll:") { Accelerator = Key.Application | Key.A });
 			args.Actions.Add (new MacButtonAction ("mac_undo", "Undo", "undo:") { Accelerator = Key.Application | Key.Z });
 			args.Actions.Add (new MacButtonAction ("mac_redo", "Redo", "redo:") { Accelerator = Key.Application | Key.Shift | Key.Z });
+			args.Actions.Add (new MacButtonAction ("mac_toggleFullScreen", "Enter Full Screen", "toggleFullScreen:") { Accelerator = Key.Application | Key.Control | Key.F });
+			
+			if (addStandardItems) {
+				var application = args.Menu.FindAddSubMenu (Widget.Name ?? "Application", 100);
+				application.Actions.AddSeparator (800);
+				application.Actions.Add ("mac_hide", 800);
+				application.Actions.Add ("mac_hideothers", 800);
+				application.Actions.Add ("mac_showall", 800);
+				application.Actions.AddSeparator (801);
+
+				var file = args.Menu.FindAddSubMenu ("&File", 100);
+				file.Actions.AddSeparator (900);
+				file.Actions.Add ("mac_performClose", 900);
+				
+				var edit = args.Menu.FindAddSubMenu ("&Edit", 200);
+				edit.Actions.AddSeparator (100);
+				edit.Actions.Add ("mac_undo", 100);
+				edit.Actions.Add ("mac_redo", 100);
+				edit.Actions.AddSeparator (101);
+				
+				edit.Actions.AddSeparator (200);
+				edit.Actions.Add ("mac_cut", 200);
+				edit.Actions.Add ("mac_copy", 200);
+				edit.Actions.Add ("mac_paste", 200);
+				edit.Actions.Add ("mac_delete", 200);
+				edit.Actions.Add ("mac_selectAll", 200);
+				edit.Actions.AddSeparator (201);
+				
+				var window = args.Menu.FindAddSubMenu ("&Window", 900);
+				window.Actions.AddSeparator (100);
+				window.Actions.Add ("mac_performMiniaturize", 100);
+				window.Actions.Add ("mac_performZoom", 100);
+				window.Actions.AddSeparator (101);
+
+				window.Actions.AddSeparator (200);
+				window.Actions.Add ("mac_arrangeInFront", 200);
+				window.Actions.AddSeparator (201);
+
+				if (AddFullScreenMenuItem) {
+					var view = args.Menu.FindAddSubMenu ("&View", 300);
+					view.Actions.AddSeparator (900);
+					view.Actions.Add ("mac_toggleFullScreen", 900);
+					view.Actions.AddSeparator (901);
+				}
+				
+				//var help = args.Menu.FindAddSubMenu ("&Help", 900);
+			}
 		}
 		
 		public Key CommonModifier {
@@ -128,7 +205,5 @@ namespace Eto.Platform.Mac
 				return Key.Alt;
 			}
 		}
-
-
 	}
 }

@@ -71,6 +71,8 @@ namespace Eto.Platform.Windows
 			};
 			Control.Controls.Add (menuHolder);
 
+			// Always handle closing because we want to send Application.Terminating event
+			HandleEvent (Window.ClosingEvent);
 		}
 		
 		public override void AttachEvent (string handler)
@@ -214,6 +216,11 @@ namespace Eto.Platform.Windows
 				icon = value;
 				Control.Icon = (sd.Icon)icon.ControlObject;
 			}
+		}
+
+		public string Title {
+			get { return Control.Text; }
+			set { Control.Text = value; }
 		}
 		
 		public Point Location {

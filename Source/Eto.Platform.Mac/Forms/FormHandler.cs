@@ -4,7 +4,7 @@ using Eto.Forms;
 using MonoMac.AppKit;
 using SD = System.Drawing;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms
 {
 	public class FormHandler : MacWindow<MyWindow, Form>, IDisposable, IForm
 	{
@@ -12,6 +12,7 @@ namespace Eto.Platform.Mac
 
 		public FormHandler()
 		{
+			DisposeControl = false;
 			Control = new MyWindow(new SD.Rectangle(0,0,200,200), 
 				NSWindowStyle.Resizable | NSWindowStyle.Closable | NSWindowStyle.Miniaturizable | NSWindowStyle.Titled, 
 				NSBackingStore.Buffered, false);

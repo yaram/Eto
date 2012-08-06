@@ -4,7 +4,7 @@ using Eto.Drawing;
 
 namespace Eto.Forms
 {
-	public partial interface IWindow : IContainer, ITextControl
+	public partial interface IWindow : IContainer
 	{
 		ToolBar ToolBar { get; set; }
 		
@@ -14,6 +14,8 @@ namespace Eto.Forms
 
 		double Opacity { get; set; }
 
+		string Title { get; set; }
+
 		//void AddToolbar(ToolBar toolBar);
 		//void RemoveToolbar(ToolBar toolBar);
 		//void ClearToolbars();
@@ -21,15 +23,14 @@ namespace Eto.Forms
 	
 	public abstract partial class Window : Container
 	{
-		IWindow inner;
+		IWindow handler;
 		//ToolBarCollection toolBars;
-		
 		
 		#region Events
 		
 		public const string ClosedEvent = "Window.Closed";
 
-		event EventHandler<EventArgs> closed;
+		EventHandler<EventArgs> closed;
 
 		public event EventHandler<EventArgs> Closed {
 			add {
@@ -48,7 +49,7 @@ namespace Eto.Forms
 
 		public const string ClosingEvent = "Window.Closing";
 
-		event EventHandler<CancelEventArgs> closing;
+		EventHandler<CancelEventArgs> closing;
 
 		public event EventHandler<CancelEventArgs> Closing {
 			add {
@@ -65,44 +66,50 @@ namespace Eto.Forms
 		}
 		
 		#endregion
-		
 
-		protected Window (Generator g, Type type) : base(g, type, false)
+		protected Window (Generator g, Type type, bool initialize = true)
+			: base(g, type, false)
 		{
-			inner = (IWindow)this.Handler;
+			handler = (IWindow)this.Handler;
 			//toolBars = new ToolBarCollection(this);
-			Initialize (); 
+			if (initialize) Initialize (); 
 		}
-	
+
+		public string Title {
+			get { return handler.Title; }
+			set { handler.Title = value; }
+		}
+
+		[Obsolete("Use Title instead")]
 		public string Text {
-			get { return inner.Text; }
-			set { inner.Text = value; }
+			get { return Title; }
+			set { Title = value; }
 		}
 		
 		public Point Location {
-			get { return inner.Location; }
-			set { inner.Location = value; }
+			get { return handler.Location; }
+			set { handler.Location = value; }
 		}
 		
 		public Rectangle Bounds {
-			get { return new Rectangle (inner.Location, inner.Size); }
-			set { inner.Location = value.Location;
-				inner.Size = value.Size; }
+			get { return new Rectangle (handler.Location, handler.Size); }
+			set { handler.Location = value.Location;
+				handler.Size = value.Size; }
 		}
 		
 		public ToolBar ToolBar {
-			get { return inner.ToolBar; }
-			set { inner.ToolBar = value; }
+			get { return handler.ToolBar; }
+			set { handler.ToolBar = value; }
 		}
 
 		public double Opacity {
-			get { return inner.Opacity; }
-			set { inner.Opacity = value; }
+			get { return handler.Opacity; }
+			set { handler.Opacity = value; }
 		}
 		
 		public virtual void Close ()
 		{
-			inner.Close ();
+			handler.Close ();
 		}
 		
 	}

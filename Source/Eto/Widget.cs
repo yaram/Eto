@@ -1,16 +1,20 @@
 using System;
-using System.Xaml;
 using System.Collections.Generic;
+
+#if DESKTOP
+using System.Xaml;
+#endif
 
 namespace Eto
 {
 	public interface IWidget
 	{
-		IWidget Handler { get; set; }
+		Widget Widget { get; set; }
 
 		void Initialize ();
 	}
 
+#if DESKTOP
 	public class PropertyStore : IAttachedPropertyStore
 	{
 		IDictionary<AttachableMemberIdentifier, object> attachedProperties = new Dictionary<AttachableMemberIdentifier, object> ();
@@ -66,9 +70,13 @@ namespace Eto
 			return attachedProperties.TryGetValue (member, out value);
 		}
 	}
+#endif
 	
-	public abstract class Widget : IWidget, IDisposable
+	public abstract class Widget : IDisposable
 	{
+		BindingCollection bindings;
+		
+#if DESKTOP
 		PropertyStore properties;
 
 		public PropertyStore Properties
@@ -79,12 +87,21 @@ namespace Eto
 				return properties;
 			}
 		}
+#endif
+		public event EventHandler<EventArgs> Disposed;
 
 		public Generator Generator { get; private set; }
+		
+		public BindingCollection Bindings {
+			get {
+				if (bindings == null) bindings = new BindingCollection (); 
+				return bindings;
+			}
+		}
 
 		public object Tag { get; set; }
 
-		public IWidget Handler { get; set; }
+		public IWidget Handler { get; internal protected set; }
 
 		~Widget ()
 		{
@@ -96,7 +113,7 @@ namespace Eto
 		{
 			this.Generator = generator;
 			this.Handler = handler;
-			this.Handler.Handler = this; // tell the handler who we are
+			this.Handler.Widget = this; // tell the handler who we are
 			if (initialize)
 				Initialize ();
 		}
@@ -109,7 +126,7 @@ namespace Eto
 				Initialize ();
 		}
 		
-		public void Initialize ()
+		protected void Initialize ()
 		{
 			Handler.Initialize ();
 		}
@@ -124,13 +141,31 @@ namespace Eto
 		
 		#endregion
 		
+		public virtual void Unbind ()
+		{
+			if (bindings != null) {
+				bindings.Unbind();
+				bindings = null;
+			}
+		}
+		
+		public virtual void UpdateBindings ()
+		{
+			if (bindings != null) {
+				bindings.Update ();
+			}
+		}
+		
 		protected virtual void Dispose (bool disposing)
 		{
+			Unbind ();
 			if (disposing) {
+				if (Disposed != null)
+					Disposed(this, EventArgs.Empty);
 				var handler = this.Handler as IDisposable;
 				if (handler != null)
 					handler.Dispose ();
-				Handler = null;
+				this.Handler = null;
 			}
 		}		
 		

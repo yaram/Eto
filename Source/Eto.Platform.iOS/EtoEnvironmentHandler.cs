@@ -35,15 +35,11 @@ namespace Eto.Platform.iOS
 			return path.Path;
 		}
 
-		#region IWidget implementation
-		
 		public void Initialize ()
 		{
 		}
 
-		public IWidget Handler { get; set; }
-		
-		#endregion
+		public Widget Widget { get; set; }
 	}
 }
 

@@ -3,11 +3,14 @@ using Eto.Forms;
 using MonoMac.AppKit;
 using SD = System.Drawing;
 using Eto.Drawing;
+using Eto.Platform.Mac.Drawing;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms.Controls
 {
 	public class GroupBoxHandler : MacContainer<NSBox, GroupBox>, IGroupBox
 	{
+		Font font;
+
 		public class EtoBox : NSBox, IMacControl
 		{
 			public object Handler { get; set; }
@@ -39,6 +42,20 @@ namespace Eto.Platform.Mac
 			}
 		}
 
+		public Font Font {
+			get {
+				return font;
+			}
+			set {
+				font = value;
+				if (font != null)
+					Control.TitleFont = ((FontHandler)font.Handler).Control;
+				else
+					Control.TitleFont = null;
+				LayoutIfNeeded ();
+			}
+		}
+
 		public virtual string Text {
 			get { return Control.Title; }
 			set { Control.Title = value; }
@@ -46,7 +63,7 @@ namespace Eto.Platform.Mac
 		
 		public override Eto.Drawing.Size GetPreferredSize ()
 		{
-			return base.GetPreferredSize () + new Size (14, 22);
+			return base.GetPreferredSize () + new Size (14, (int)(Control.TitleFont.LineHeight () * 1.4));
 		}
 		
 		public override void SetContentSize (SD.SizeF contentSize)

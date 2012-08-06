@@ -7,12 +7,28 @@ using Eto.Drawing;
 using Eto.Platform.GtkSharp.Drawing;
 using System.Collections.Generic;
 using GLib;
+using System.Text;
 
 namespace Eto.Platform.GtkSharp
 {
 	public interface IGtkControl
 	{
 		Point Location { get; set; }
+
+		Gtk.Widget ContainerControl { get; }
+	}
+
+	public static class GtkControlExtensions
+	{
+		public static Gtk.Widget GetContainerWidget (this Control control)
+		{
+			if (control == null)
+				return null;
+			var containerHandler = control.Handler as IGtkControl;
+			if (containerHandler != null)
+				return containerHandler.ContainerControl;
+			return control.ControlObject as Gtk.Widget;
+		}
 	}
 
 	public abstract class GtkControl<T, W> : WidgetHandler<T, W>, IControl, IGtkControl
@@ -31,17 +47,39 @@ namespace Eto.Platform.GtkSharp
 			size = Size.Empty;
 		}
 
+		public virtual Gtk.Widget ContainerControl
+		{
+			get { return Control; }
+		}
+
+		public virtual Gtk.Widget EventControl
+		{
+			get { return Control; }
+		}
+
 		public static string StringToMnuemonic (string label)
 		{
-			//label = label.Replace("_", "__");
-			label = label.Replace ("&", "_");
-			return label;
+			label = label.Replace ("_", "__");
+			var match = Regex.Match (label, @"(?<=([^&](?:[&]{2})*)|^)[&](?![&])");
+			if (match.Success) {
+				var sb = new StringBuilder (label);
+				sb[match.Index] = '_';
+				sb.Replace ("&&", "&");
+				return sb.ToString ();
+			}
+			return label.Replace ("&&", "&");
 		}
 
 		public static string MnuemonicToString (string label)
 		{
-			label = label.Replace ("_", "&");
-			//label = label.Replace("__", "_");
+			var match = Regex.Match (label, @"(?<=([^_](?:[_]{2})*)|^)[_](?![_])");
+			if (match.Success) {
+				var sb = new StringBuilder (label);
+				sb[match.Index] = '&';
+				sb.Replace ("__", "_");
+				return sb.ToString ();
+			}
+			label = label.Replace ("__", "_");
 			return label;
 		}
 
@@ -51,9 +89,9 @@ namespace Eto.Platform.GtkSharp
 		}
 
 		public virtual Size Size {
-			get { 
-				if (Control.Visible) 
-					return Generator.Convert (Control.Allocation.Size);
+			get {
+				if (ContainerControl.Visible)
+					return Generator.Convert (ContainerControl.Allocation.Size);
 				else
 					return size; 
 			}
@@ -63,7 +101,7 @@ namespace Eto.Platform.GtkSharp
 					var alloc = Control.Allocation;
 					alloc.Size = Generator.Convert (value);
 					//Control.Allocation = alloc;
-					Control.SetSizeRequest (size.Width, size.Height);
+					ContainerControl.SetSizeRequest (size.Width, size.Height);
 				}
 			}
 		}
@@ -92,11 +130,11 @@ namespace Eto.Platform.GtkSharp
 		}
 
 		public virtual Color BackgroundColor {
-			get { return Generator.Convert (Control.Style.Background (Gtk.StateType.Normal)); }
+			get { return Generator.Convert (ContainerControl.Style.Background (Gtk.StateType.Normal)); }
 			set { 
-				var eb = Control as Gtk.EventBox;
+				var eb = ContainerControl as Gtk.EventBox;
 				if (eb != null) eb.VisibleWindow = !value.IsEmpty;
-				Control.ModifyBg (Gtk.StateType.Normal, Generator.Convert (value));
+				ContainerControl.ModifyBg (Gtk.StateType.Normal, Generator.Convert (value));
 			}
 		}
 
@@ -169,48 +207,48 @@ namespace Eto.Platform.GtkSharp
 		{
 			switch (handler) {
 			case Eto.Forms.Control.KeyDownEvent:
-				Control.AddEvents ((int)Gdk.EventMask.KeyPressMask);
-				Control.KeyPressEvent += GtkControlObject_KeyPressEvent;
+				EventControl.AddEvents ((int)Gdk.EventMask.KeyPressMask);
+				EventControl.KeyPressEvent += GtkControlObject_KeyPressEvent;
 				break;
 			case Eto.Forms.Control.SizeChangedEvent:
-				Control.AddEvents ((int)Gdk.EventMask.StructureMask);
-				Control.SizeAllocated += GtkControlObject_SizeAllocated;
+				EventControl.AddEvents ((int)Gdk.EventMask.StructureMask);
+				EventControl.SizeAllocated += GtkControlObject_SizeAllocated;
 				break;
 			case Eto.Forms.Control.MouseDoubleClickEvent:
 			case Eto.Forms.Control.MouseDownEvent:
 				if (!mouseDownHandled) {
-					Control.AddEvents ((int)Gdk.EventMask.ButtonPressMask);
-					Control.AddEvents ((int)Gdk.EventMask.ButtonReleaseMask);
-					Control.ButtonPressEvent += GtkControlObject_ButtonPressEvent;
+					EventControl.AddEvents ((int)Gdk.EventMask.ButtonPressMask);
+					EventControl.AddEvents ((int)Gdk.EventMask.ButtonReleaseMask);
+					EventControl.ButtonPressEvent += GtkControlObject_ButtonPressEvent;
 					mouseDownHandled = true;
 				}
 				break;
 			case Eto.Forms.Control.MouseUpEvent:
-				Control.AddEvents ((int)Gdk.EventMask.ButtonReleaseMask);
-				Control.ButtonReleaseEvent += GtkControlObject_ButtonReleaseEvent;
+				EventControl.AddEvents ((int)Gdk.EventMask.ButtonReleaseMask);
+				EventControl.ButtonReleaseEvent += GtkControlObject_ButtonReleaseEvent;
 				break;
 			case Eto.Forms.Control.MouseEnterEvent:
-				Control.AddEvents ((int)Gdk.EventMask.EnterNotifyMask);
-				Control.EnterNotifyEvent += HandleControlEnterNotifyEvent;
+				EventControl.AddEvents ((int)Gdk.EventMask.EnterNotifyMask);
+				EventControl.EnterNotifyEvent += HandleControlEnterNotifyEvent;
 				break;
 			case Eto.Forms.Control.MouseLeaveEvent:
-				Control.AddEvents ((int)Gdk.EventMask.LeaveNotifyMask);
-				Control.LeaveNotifyEvent += HandleControlLeaveNotifyEvent;
+				EventControl.AddEvents ((int)Gdk.EventMask.LeaveNotifyMask);
+				EventControl.LeaveNotifyEvent += HandleControlLeaveNotifyEvent;
 				break;
 			case Eto.Forms.Control.MouseMoveEvent:
-				Control.AddEvents ((int)Gdk.EventMask.ButtonMotionMask);
-				Control.AddEvents ((int)Gdk.EventMask.PointerMotionMask);
+				EventControl.AddEvents ((int)Gdk.EventMask.ButtonMotionMask);
+				EventControl.AddEvents ((int)Gdk.EventMask.PointerMotionMask);
 					//GtkControlObject.Events |= Gdk.EventMask.PointerMotionHintMask;
-				Control.MotionNotifyEvent += GtkControlObject_MotionNotifyEvent;
+				EventControl.MotionNotifyEvent += GtkControlObject_MotionNotifyEvent;
 				break;
 			case Eto.Forms.Control.GotFocusEvent:
-				Control.AddEvents ((int)Gdk.EventMask.FocusChangeMask);
-				Control.FocusInEvent += delegate {
+				EventControl.AddEvents ((int)Gdk.EventMask.FocusChangeMask);
+				EventControl.FocusInEvent += delegate {
 					Widget.OnGotFocus (EventArgs.Empty); };
 				break;
 			case Eto.Forms.Control.LostFocusEvent:
-				Control.AddEvents ((int)Gdk.EventMask.FocusChangeMask);
-				Control.FocusOutEvent += delegate {
+				EventControl.AddEvents ((int)Gdk.EventMask.FocusChangeMask);
+				EventControl.FocusOutEvent += delegate {
 					Widget.OnLostFocus (EventArgs.Empty); };
 				break;
 			default:
@@ -354,7 +392,7 @@ namespace Eto.Platform.GtkSharp
 			get { return Control; }
 		}
 		
-		public Font Font {
+		public virtual Font Font {
 			get {
 				return font;
 			}
@@ -385,5 +423,8 @@ namespace Eto.Platform.GtkSharp
 			set { Control.TooltipText = value; }
 		}
 		
+		public virtual void MapPlatformAction (string systemAction, BaseAction action)
+		{
+		}
 	}
 }

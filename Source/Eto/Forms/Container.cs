@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using Eto.Drawing;
 using System.Linq;
+
+#if DESKTOP
 using System.Windows.Markup;
+#endif
 
 namespace Eto.Forms
 {
@@ -16,10 +19,12 @@ namespace Eto.Forms
 		void SetLayout (Layout layout);
 	}
 	
+#if DESKTOP
 	[ContentProperty("Layout")]
+#endif
 	public partial class Container : Control
 	{
-		IContainer inner;
+		IContainer handler;
 		Layout layout;
 
 		public IEnumerable<Control> Controls {
@@ -82,17 +87,17 @@ namespace Eto.Forms
 				Layout.OnLoadComplete (e);
 		}
 		
-		protected Container (Generator g, Type type, bool initialize = true) : base(g, type, initialize)
+		protected Container (Generator g, Type type, bool initialize = true)
+			: base(g, type, initialize)
 		{
-			inner = (IContainer)base.Handler;
+			handler = (IContainer)base.Handler;
 		}
 		
 		public object ContainerObject {
-			get { return inner.ContainerObject; }
+			get { return handler.ContainerObject; }
 		}
 		
-		public Layout Layout 
-		{
+		public Layout Layout {
 			get { return layout; }
 			set {
 				layout = value;
@@ -106,7 +111,7 @@ namespace Eto.Forms
 			var innerLayout = layout.InnerLayout;
 			if (innerLayout != null) {
 				innerLayout.Container = this;
-				inner.SetLayout (innerLayout);
+				handler.SetLayout (innerLayout);
 				if (Loaded) {
 					layout.OnPreLoad (EventArgs.Empty);
 					layout.OnLoad (EventArgs.Empty);
@@ -116,8 +121,24 @@ namespace Eto.Forms
 		}
 		
 		public Size ClientSize {
-			get { return inner.ClientSize; }
-			set { inner.ClientSize = value; }
+			get { return handler.ClientSize; }
+			set { handler.ClientSize = value; }
+		}
+		
+		public override void Unbind ()
+		{
+			base.Unbind ();
+			foreach (var control in Controls) {
+				control.Unbind ();
+			}
+		}
+		
+		public override void UpdateBindings ()
+		{
+			base.UpdateBindings ();
+			foreach (var control in Controls) {
+				control.UpdateBindings ();
+			}
 		}
 	}
 }

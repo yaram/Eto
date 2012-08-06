@@ -4,6 +4,7 @@ using SD = System.Drawing;
 using Eto.Forms;
 using MonoMac.Foundation;
 using MonoMac.ObjCRuntime;
+using Eto.Platform.Mac.Drawing;
 
 namespace Eto.Platform.Mac.Forms.Controls
 {
@@ -30,12 +31,11 @@ namespace Eto.Platform.Mac.Forms.Controls
 			this.Text = value.Text;
 			this.Image = value.Image;
 		}
-		
-		[Export("description")]
-		public NSString Description {
-			get { return Text ?? new NSString (string.Empty); }
+
+		public override string Description {
+			get { return (string)Text ?? string.Empty; }
 		}
-			
+
 		public NSImage Image { get; set; }
 
 		public NSString Text { get; set; }
@@ -51,10 +51,10 @@ namespace Eto.Platform.Mac.Forms.Controls
 		{
 			var imgitem = value as IImageListItem;
 			if (imgitem != null && imgitem.Image != null)
-				this.Image = imgitem.Image.ControlObject as NSImage;
+				this.Image = ((IImageSource)imgitem.Image.Handler).GetImage ();
 			this.Text = (NSString)value.Text;
 		}
-			
+		
 		[Export("copyWithZone:")]
 		public virtual NSObject CopyWithZone (IntPtr zone)
 		{
@@ -75,7 +75,7 @@ namespace Eto.Platform.Mac.Forms.Controls
 
 	public class MacImageListItemCell : NSTextFieldCell
 	{
-		const int IMAGE_PADDING = 2;
+		public const int ImagePadding = 2;
 		
 		static IntPtr selDrawInRectFromRectOperationFractionRespectFlippedHints = Selector.GetHandle ("drawInRect:fromRect:operation:fraction:respectFlipped:hints:");
 
@@ -94,7 +94,10 @@ namespace Eto.Platform.Mac.Forms.Controls
 			var size = base.CellSizeForBounds (bounds);
 			var data = ObjectValue as MacImageData;
 			if (data != null && data.Image != null) {
-				size.Width += bounds.Height + IMAGE_PADDING;
+				var imageSize = data.Image.Size;
+				var newHeight = Math.Min (imageSize.Height, size.Height);
+				var newWidth = imageSize.Width * newHeight / imageSize.Height;
+				size.Width += newWidth + ImagePadding;
 			}
 			size.Width = Math.Min (size.Width, bounds.Width);
 			return size;
@@ -106,7 +109,13 @@ namespace Eto.Platform.Mac.Forms.Controls
 			if (data != null) {
 					
 				if (data.Image != null) {
-					var imageRect = new SD.RectangleF (cellFrame.X, cellFrame.Y, cellFrame.Height, cellFrame.Height);
+					var imageSize = data.Image.Size;
+					var newHeight = Math.Min (imageSize.Height, cellFrame.Height);
+					var newWidth = imageSize.Width * newHeight / imageSize.Height;
+					
+					var imageRect = new SD.RectangleF (cellFrame.X, cellFrame.Y, newWidth, newHeight);
+					imageRect.Y += (cellFrame.Height - newHeight) / 2;
+					
 					if (data.Image.RespondsToSelector (new Selector (selDrawInRectFromRectOperationFractionRespectFlippedHints)))
 						// 10.6+
 						data.Image.Draw (imageRect, new SD.RectangleF (SD.PointF.Empty, data.Image.Size), NSCompositingOperation.SourceOver, 1, true, null);
@@ -117,8 +126,8 @@ namespace Eto.Platform.Mac.Forms.Controls
 						#pragma warning restore 618
 						data.Image.Draw (imageRect, new SD.RectangleF (SD.PointF.Empty, data.Image.Size), NSCompositingOperation.SourceOver, 1);
 					}
-					cellFrame.Width -= cellFrame.Height + IMAGE_PADDING;
-					cellFrame.X += cellFrame.Height + IMAGE_PADDING;
+					cellFrame.Width -= newWidth + ImagePadding;
+					cellFrame.X += newWidth + ImagePadding;
 				}
 			}
 			

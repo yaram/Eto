@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Eto.Drawing;
+using System.Collections.Generic;
 
 namespace Eto.Forms
 {
@@ -22,18 +23,22 @@ namespace Eto.Forms
 	
 	public class ImageMenuItem : MenuActionItem, ISubMenuWidget
 	{
-		IImageMenuItem inner;
+		IImageMenuItem handler;
 		MenuItemCollection menuItems;
 		
-		public ImageMenuItem ()
-			: this(Generator.Current)
+		public ImageMenuItem () : this (Generator.Current)
 		{
 		}
 		
-		public ImageMenuItem (Generator g) : base(g, typeof(IImageMenuItem))
+		public ImageMenuItem (Generator g) : this (g, typeof(IImageMenuItem))
 		{
-			inner = (IImageMenuItem)base.Handler;
-			menuItems = new MenuItemCollection (this, inner);
+		}
+		
+		protected ImageMenuItem (Generator generator, Type type, bool initialize = true)
+			: base (generator, type, initialize)
+		{
+			handler = (IImageMenuItem)base.Handler;
+			menuItems = new MenuItemCollection (this, handler);
 		}
 
 		public MenuItemCollection MenuItems {
@@ -41,15 +46,14 @@ namespace Eto.Forms
 		}
 
 		public Icon Icon {
-			get { return inner.Icon; }
-			set { inner.Icon = value; }
+			get { return handler.Icon; }
+			set { handler.Icon = value; }
 		}
 		
-		public void GenerateActions (ActionItemCollection actionItems)
+		public void GenerateActions (IEnumerable<IActionItem> actionItems)
 		{
-			foreach (IActionItem ai in actionItems)
-			{
-				ai.Generate(this);
+			foreach (IActionItem ai in actionItems) {
+				ai.Generate (this);
 			}
 		}
 		

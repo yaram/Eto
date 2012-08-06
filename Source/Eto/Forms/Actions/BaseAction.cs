@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using Eto.Drawing;
-using Eto.Collections;
 
 namespace Eto.Forms
 {
@@ -64,8 +63,12 @@ namespace Eto.Forms
 		}
 		
 		public string MenuText { get; set; }
+
+		public string MenuItemStyle { get; set; }
 		
 		public string ToolBarText { get; set; }
+		
+		public string ToolBarItemStyle { get; set; }
 		
 		public string TooltipText { get; set; }
 		

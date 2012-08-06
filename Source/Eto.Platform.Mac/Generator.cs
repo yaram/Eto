@@ -114,6 +114,16 @@ namespace Eto.Platform.Mac
 			return NSColor.FromDeviceRgba (color.R, color.G, color.B, color.A);
 		}
 
+		public static CGColor ConvertNSToCG (NSColor color)
+		{
+			var cs = NSColorSpace.DeviceRGBColorSpace;
+
+			var devColor = color.UsingColorSpace (cs);
+			float[] components;
+			devColor.GetComponents (out components);
+			return new CGColor(cs.ColorSpace, components);
+		}
+
 		public static Color Convert (NSColor color)
 		{
 			if (color == null)
@@ -121,6 +131,12 @@ namespace Eto.Platform.Mac
 			float red, green, blue, alpha;
 			color.GetRgba (out red, out green, out blue, out alpha);
 			return new Color (red, green, blue, alpha);
+		}
+		
+		public static NSUrl Convert (Uri uri)
+		{
+			if (uri == null) return null;
+			return new NSUrl(uri.AbsoluteUri);
 		}
 		
 		public static MouseEventArgs GetMouseEvent (NSView view, NSEvent theEvent)

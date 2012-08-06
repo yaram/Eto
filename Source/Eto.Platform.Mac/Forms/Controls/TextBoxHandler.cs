@@ -5,7 +5,7 @@ using MonoMac.Foundation;
 using Eto.Platform.Mac.Forms.Controls;
 using MonoMac.ObjCRuntime;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms.Controls
 {
 	public interface ITextBoxWithMaxLength
 	{
@@ -82,12 +82,15 @@ namespace Eto.Platform.Mac
 		
 		public TextBoxHandler ()
 		{
-			Control = new EtoTextField{ Handler = this };
-			Control.Bezeled = true;
-			Control.Editable = true;
-			Control.Selectable = true;
-			
-			Control.Formatter = new MyFormatter{ Handler = this };
+			Control = new EtoTextField {
+				Handler = this,
+				Bezeled = true,
+				Editable = true,
+				Selectable = true,
+				Formatter = new MyFormatter{ Handler = this }
+			};
+			Control.Cell.LineBreakMode = NSLineBreakMode.CharWrapping;
+
 			//Control.BezelStyle = NSTextFieldBezelStyle.Square;
 			//Control.Bordered = true;
 			MaxLength = -1;
@@ -115,6 +118,11 @@ namespace Eto.Platform.Mac
 		public int MaxLength {
 			get;
 			set;
+		}
+		
+		public string PlaceholderText {
+			get { return ((NSTextFieldCell)Control.Cell).PlaceholderString; }
+			set { ((NSTextFieldCell)Control.Cell).PlaceholderString = value ?? string.Empty; }
 		}
 	}
 }

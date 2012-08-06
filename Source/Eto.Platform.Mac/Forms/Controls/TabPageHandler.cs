@@ -6,7 +6,7 @@ using MonoMac.Foundation;
 using Eto.Drawing;
 using MonoMac.ObjCRuntime;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms.Controls
 {
 	public class TabPageHandler : WidgetHandler<NSTabViewItem, TabPage>, ITabPage, IMacContainer
 	{
@@ -255,5 +255,9 @@ namespace Eto.Platform.Mac
 		}
 		
 		#endregion
+		
+		public virtual void MapPlatformAction (string systemAction, BaseAction action)
+		{
+		}
 	}
 }

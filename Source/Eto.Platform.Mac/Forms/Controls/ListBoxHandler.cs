@@ -6,27 +6,40 @@ using MonoMac.Foundation;
 using System.Collections.Generic;
 using System.Linq;
 using Eto.Platform.Mac.Forms.Controls;
+using Eto.Drawing;
+using Eto.Platform.Mac.Drawing;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms.Controls
 {
-	public class ListBoxHandler : MacView<NSScrollView, ListBox>, IListBox
+	public class ListBoxHandler : MacControl<NSTableView, ListBox>, IListBox
 	{
-		NSTableView control;
+		Font font;
 		NSScrollView scroll;
-		List<IListItem> data = new List<IListItem> ();
-		
+		CollectionHandler collection;
+		MacImageListItemCell cell;
+
+		public override NSView ContainerControl
+		{
+			get { return scroll; }
+		}
+
+		public NSScrollView Scroll
+		{
+			get { return scroll; }
+		}
+				
 		class DataSource : NSTableViewDataSource
 		{
 			public ListBoxHandler Handler { get; set; }
 			
 			public override NSObject GetObjectValue (NSTableView tableView, NSTableColumn tableColumn, int row)
 			{
-				return new MacImageData (Handler.data [row]);
+				return new MacImageData (Handler.collection.DataStore [row]);
 			}
 
 			public override int GetRowCount (NSTableView tableView)
 			{
-				return Handler.data.Count;
+				return Handler.collection.DataStore != null ? Handler.collection.DataStore.Count : 0;
 			}
 		}
 		
@@ -75,80 +88,121 @@ namespace Eto.Platform.Mac
 		}
 		
 		public override bool Enabled {
-			get { return control.Enabled; }
-			set { control.Enabled = value; }
-		}
-		
-		public override object EventObject {
-			get { return control; }
+			get { return Control.Enabled; }
+			set { Control.Enabled = value; }
 		}
 		
 		public ListBoxHandler ()
 		{
-			control = new EtoListBoxTableView{ Handler = this };
+			collection = new CollectionHandler{ Handler = this };
+			Control = new EtoListBoxTableView { Handler = this };
 			
 			var col = new NSTableColumn ();
 			col.ResizingMask = NSTableColumnResizing.Autoresizing;
 			col.Editable = false;
-			col.DataCell = new MacImageListItemCell ();
-			control.AddColumn (col);
-			
-			control.DataSource = new DataSource{ Handler = this };
-			control.HeaderView = null;
-			control.DoubleClick += delegate {
+			cell = new MacImageListItemCell ();
+			cell.Wraps = false;
+			col.DataCell = cell;
+			Control.AddColumn (col);
+
+			Control.DataSource = new DataSource { Handler = this };
+			Control.HeaderView = null;
+			Control.DoubleClick += delegate {
 				Widget.OnActivated (EventArgs.Empty);
 			};
-			control.Delegate = new Delegate { Handler = this };
+			Control.Delegate = new Delegate { Handler = this };
 			
 			scroll = new NSScrollView ();
 			scroll.AutoresizesSubviews = true;
-			scroll.DocumentView = control;
+			scroll.DocumentView = Control;
 			scroll.HasVerticalScroller = true;
 			scroll.HasHorizontalScroller = true;
 			scroll.AutohidesScrollers = true;
 			scroll.BorderType = NSBorderType.BezelBorder;
-			Control = scroll;
-		}
-		
-		#region IListControl Members
-		
-		public void AddRange (IEnumerable<IListItem> collection)
-		{
-			data.AddRange (collection);
-			control.ReloadData ();
-		}
-		
-		public void AddItem (IListItem item)
-		{
-			data.Add (item);
-			control.ReloadData ();
 		}
 
-		public void RemoveItem (IListItem item)
+		public override Eto.Drawing.Font Font {
+			get { return font; }
+			set {
+				font = value;
+				if (font != null) {
+					var fontHandler = (FontHandler)font.Handler;
+					cell.Font = fontHandler.Control;
+					Control.RowHeight = fontHandler.LineHeight;
+				}
+				else
+					cell.Font = NSFont.SystemFontOfSize(NSFont.SystemFontSize);
+			}
+		}
+
+		class CollectionHandler : DataStoreChangedHandler<IListItem, IListStore>
 		{
-			data.Remove (item);
-			control.ReloadData ();
+			public ListBoxHandler Handler { get; set; }
+
+			public override int IndexOf (IListItem item)
+			{
+				return -1; // not needed
+			}
+			
+			public override void AddRange (IEnumerable<IListItem> items)
+			{
+				Handler.Control.ReloadData ();
+			}
+
+			public override void AddItem (IListItem item)
+			{
+				Handler.Control.ReloadData ();
+			}
+
+			public override void InsertItem (int index, IListItem item)
+			{
+				Handler.Control.ReloadData ();
+			}
+
+			public override void RemoveItem (int index)
+			{
+				Handler.Control.ReloadData ();
+			}
+
+			public override void RemoveAllItems ()
+			{
+				Handler.Control.ReloadData ();
+			}
+		}
+
+		public IListStore DataStore {
+			get { return collection.DataStore; }
+			set {
+				if (collection.DataStore != null)
+					collection.Unregister ();
+				collection.Register (value);
+			}
 		}
 
 		public int SelectedIndex {
-			get	{ return control.SelectedRow; }
+			get { return Control.SelectedRow; }
 			set {
 				if (value == -1)
-					control.DeselectAll (control);
+					Control.DeselectAll (Control);
 				else {
-					control.SelectRow (value, false);
-					control.ScrollRowToVisible (value);
+					Control.SelectRow (value, false);
+					Control.ScrollRowToVisible (value);
 				}
 			}
 		}
 
-		public void RemoveAll ()
+		public override void Focus ()
 		{
-			data.Clear ();
-			control.ReloadData ();
+			if (this.Control.Window != null)
+				this.Control.Window.MakeFirstResponder (this.Control);
+			else 
+				base.Focus();
 		}
-
-		#endregion
-
+		
+		public override bool HasFocus {
+			get {
+				return Control.Window != null && Control.Window.FirstResponder == Control;
+			}
+		}
 	}
 }

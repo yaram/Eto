@@ -1,5 +1,7 @@
 using System;
 using Eto.Forms;
+using System.Linq;
+using Eto.Drawing;
 
 namespace Eto.Test
 {
@@ -8,12 +10,13 @@ namespace Eto.Test
 		public TestApplication (Generator generator)
 			: base(generator)
 		{
+			this.Name = "Test Application";
 		}
-		
+
 		public override void OnInitialized (EventArgs e)
 		{
-			this.MainForm = new MainForm();
-            HandleEvent (Application.TerminatingEvent);
+			this.MainForm = new MainForm ();
+			HandleEvent (Application.TerminatingEvent);
 			
 			base.OnInitialized (e);
 			

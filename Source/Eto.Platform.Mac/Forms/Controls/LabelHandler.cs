@@ -7,10 +7,13 @@ using MonoMac.AppKit;
 using Eto.Platform.Mac.Drawing;
 using MonoMac.Foundation;
 using MonoMac.ObjCRuntime;
+using MonoMac.CoreText;
+using System.Text.RegularExpressions;
+using System.Linq;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms.Controls
 {
-	public class LabelHandler : MacView<NSTextField, Label>, ILabel
+	public class LabelHandler : MacView<LabelHandler.EtoLabel, Label>, ILabel
 	{
 		Font font;
 		bool is106;
@@ -53,21 +56,50 @@ namespace Eto.Platform.Mac
 		public class EtoLabel : NSTextField, IMacControl
 		{
 			public object Handler {
-				get; set;
+				get;
+				set;
+			}
+			
+			static IntPtr selAttributedStringValue = Selector.GetHandle ("attributedStringValue");
+			static IntPtr selSetAttributedStringValue = Selector.GetHandle ("setAttributedStringValue:");
+
+			// remove when implemented in monomac
+			public NSAttributedString AttributedStringValue {
+				[Export ("attributedStringValue")]
+				get {
+					if (this.IsDirectBinding) {
+						return new NSAttributedString (Messaging.IntPtr_objc_msgSend (base.Handle, EtoLabel.selAttributedStringValue));
+					}
+					return new NSAttributedString (Messaging.IntPtr_objc_msgSendSuper (base.SuperHandle, EtoLabel.selAttributedStringValue));
+				}
+				[Export ("setAttributedStringValue:")]
+				set {
+					if (value == null) {
+						throw new ArgumentNullException ("value");
+					}
+					if (this.IsDirectBinding) {
+						Messaging.void_objc_msgSend_IntPtr (base.Handle, EtoLabel.selSetAttributedStringValue, value.Handle);
+					} else {
+						Messaging.void_objc_msgSendSuper_IntPtr (base.SuperHandle, EtoLabel.selSetAttributedStringValue, value.Handle);
+					}
+				}
+				
 			}
 		}
 		
 		public LabelHandler ()
 		{
 			Enabled = true;
-			Control = new EtoLabel { Handler = this };
-			Control.Cell = new MyTextFieldCell{ Handler = this };
-			Control.DrawsBackground = false;
-			Control.Bordered = false;
-			Control.Bezeled = false;
-			Control.Editable = false;
-			Control.Selectable = false;
-			Control.Alignment = NSTextAlignment.Left;
+			Control = new EtoLabel { 
+				Handler = this,
+				Cell = new MyTextFieldCell{ Handler = this, StringValue = string.Empty },
+				DrawsBackground = false,
+				Bordered = false,
+				Bezeled = false,
+				Editable = false,
+				Selectable = false,
+				Alignment = NSTextAlignment.Left
+			};
 			is106 = Control.Cell.RespondsToSelector (new Selector ("setUsesSingleLineMode:"));
 			if (is106)
 				Control.Cell.UsesSingleLineMode = false;
@@ -123,7 +155,27 @@ namespace Eto.Platform.Mac
 			}
 			set {
 				var oldSize = GetPreferredSize ();
-				Control.StringValue = value ?? string.Empty;
+				
+				var match = Regex.Match (value, @"(?<=([^&](?:[&]{2})*)|^)[&](?![&])");
+				if (match.Success) {
+					var str = new NSMutableAttributedString (value.Remove(match.Index, match.Length).Replace ("&&", "&"));
+					
+					var matches = Regex.Matches (value, @"[&][&]");
+					var prefixCount = matches.Cast<Match>().Count (r => r.Index < match.Index);
+					
+					// copy existing attributes
+					NSRange range;
+					var attributes = new NSMutableDictionary(Control.AttributedStringValue.GetAttributes (0, out range));
+					if (attributes.ContainsKey(CTStringAttributeKey.UnderlineStyle))
+						attributes.Remove (CTStringAttributeKey.UnderlineStyle);
+					str.AddAttributes (attributes, new NSRange(0, str.Length));
+					
+					str.AddAttribute (CTStringAttributeKey.UnderlineStyle, new NSNumber ((int)CTUnderlineStyle.Single), new NSRange (match.Index - prefixCount, 1));
+					Control.AttributedStringValue = str;
+				} else if (!string.IsNullOrEmpty(value))
+					Control.StringValue = value.Replace ("&&", "&");
+				else
+					Control.StringValue = string.Empty;
 				LayoutIfNeeded (oldSize);
 			}
 		}

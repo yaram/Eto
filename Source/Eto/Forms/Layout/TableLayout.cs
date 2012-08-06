@@ -2,11 +2,13 @@ using System;
 using Eto.Drawing;
 using System.Linq;
 using System.Collections.Generic;
-using System.Windows.Markup;
 using System.Collections;
-using Eto.Collections;
-using System.Xaml;
 using System.ComponentModel;
+using System.Collections.ObjectModel;
+#if DESKTOP
+using System.Windows.Markup;
+using System.Xaml;
+#endif
 
 namespace Eto.Forms
 {
@@ -23,13 +25,15 @@ namespace Eto.Forms
 		Padding Padding { get; set; }
 	}
 
+#if DESKTOP
 	[ContentProperty("Children")]
+#endif
 	public class TableLayout : Layout
 	{
 		ITableLayout inner;
 		Control[,] controls;
 		Size size;
-		BaseList<Control> children;
+		IList<Control> children;
 		public static Size DefaultSpacing = new Size (5, 5);
 		public static Padding DefaultPadding = new Padding (5);
 		
@@ -41,10 +45,10 @@ namespace Eto.Forms
 			}
 		}
 		
-		public BaseList<Control> Children {
+		public IList<Control> Children {
 			get { 
 				if (children == null) {
-					children = new BaseList<Control> ();
+					children = new List<Control> ();
 				}
 				return children; 
 			}
@@ -61,6 +65,7 @@ namespace Eto.Forms
 			}
 		}
 
+#if DESKTOP		
 		static AttachableMemberIdentifier LocationProperty = new AttachableMemberIdentifier (typeof(TableLayout), "Location");
 		
 		public static Point GetLocation (Control control)
@@ -75,6 +80,7 @@ namespace Eto.Forms
 			if (layout != null)
 				layout.Move (control, value);
 		}
+#endif
 		
 		public static Control AutoSized (Control control, Padding? padding = null)
 		{
@@ -174,9 +180,13 @@ namespace Eto.Forms
 		public override void EndInit ()
 		{
 			base.EndInit ();
-			foreach (var child in children) {
-				this.Add (child, GetLocation (child));
+#if DESKTOP			
+			if (children != null) {
+				foreach (var child in children) {
+					this.Add (child, GetLocation (child));
+				}
 			}
+#endif
 		}
 
 	}

@@ -4,179 +4,94 @@ using System.Runtime.InteropServices;
 using Eto.Drawing;
 using System.Linq;
 using System.Collections.Generic;
+using Eto.Platform.GtkSharp.Forms.Cells;
 
 namespace Eto.Platform.GtkSharp.Forms.Controls
 {
-
-	public class GridViewHandler : GtkControl<Gtk.ScrolledWindow, GridView>, IGridView, ICellDataSource
+	public class GridViewHandler : GridHandler<GridView>, IGridView, ICellDataSource, IGtkListModelHandler<IGridItem, IGridStore>, IGridHandler
 	{
-		Gtk.TreeView tree;
-		GtkGridViewModel model;
-		internal IGridStore store;
-		ContextMenu contextMenu;
+		GtkListModel<IGridItem, IGridStore> model;
+		CollectionHandler collection;
 		
 		public GridViewHandler ()
 		{
-			model = new GtkGridViewModel{ Handler = this };
-			tree = new Gtk.TreeView (new Gtk.TreeModelAdapter (model));
-			tree.HeadersVisible = true;
-			
-			Control = new Gtk.ScrolledWindow ();
-			Control.ShadowType = Gtk.ShadowType.In;
-			Control.Add (tree);
+		}
 
-			tree.Events |= Gdk.EventMask.ButtonPressMask;
-			tree.ButtonPressEvent += HandleTreeButtonPressEvent;
+		protected override Gtk.TreeModelImplementor CreateModelImplementor ()
+		{
+			model = new GtkListModel<IGridItem, IGridStore> { Handler = this };
+			return model;
 		}
 		
-		[GLib.ConnectBefore]
-		void HandleTreeButtonPressEvent (object o, Gtk.ButtonPressEventArgs args)
+		public class CollectionHandler : DataStoreChangedHandler<IGridItem, IGridStore>
 		{
-			if (contextMenu != null && args.Event.Button == 3 && args.Event.Type == Gdk.EventType.ButtonPress) {
-				var menu = ((ContextMenuHandler)contextMenu.Handler).Control;
-				menu.Popup ();
-				menu.ShowAll ();
+			public GridViewHandler Handler { get; set; }
+
+			public override void AddRange (IEnumerable<IGridItem> items)
+			{
+				Handler.UpdateModel ();
 			}
-		}
-		
-		public override void AttachEvent (string handler)
-		{
-			switch (handler) {
-				case GridView.BeginCellEditEvent:
-				case GridView.EndCellEditEvent:
-					SetupColumnEvents ();
-					break;
-				case GridView.SelectionChangedEvent:
-					tree.Selection.Changed += delegate {
-						Widget.OnSelectionChanged (EventArgs.Empty);
-					};
-					break;
-				default:
-					base.AttachEvent (handler);
-					break;
+
+			public override void AddItem (IGridItem item)
+			{
+				var iter = Handler.model.GetIterAtRow (DataStore.Count);
+				var path = Handler.model.GetPathAtRow (DataStore.Count);
+				Handler.Tree.Model.EmitRowInserted (path, iter);
 			}
-		}
-		
-		public override void OnLoadComplete (EventArgs e)
-		{
-			base.OnLoadComplete (e);
-			tree.AppendColumn (new Gtk.TreeViewColumn());
-		}
 
-		void SetupColumnEvents ()
-		{
-			foreach (var col in Widget.Columns.Select (r => r.Handler).OfType<GridColumnHandler> ()) {
-				col.SetupEvents ();
+			public override void InsertItem (int index, IGridItem item)
+			{
+				var iter = Handler.model.GetIterAtRow (index);
+				var path = Handler.model.GetPathAtRow (index);
+				Handler.Tree.Model.EmitRowInserted (path, iter);
 			}
-		}
 
-		public void InsertColumn (int index, GridColumn item)
-		{
-			var colHandler = ((GridColumnHandler)item.Handler);
-			if (index >= 0 && tree.Columns.Length > 0)
-				tree.InsertColumn (colHandler.Control, index);
-			else
-				index = tree.AppendColumn (colHandler.Control);
-			colHandler.BindCell (this, this, index);
-		}
-
-		public void RemoveColumn (int index, GridColumn item)
-		{
-			var colHandler = ((GridColumnHandler)item.Handler);
-			tree.RemoveColumn (colHandler.Control);
-		}
-
-		public void ClearColumns ()
-		{
-			foreach (var col in tree.Columns) {
-				tree.RemoveColumn (col);
+			public override void RemoveItem (int index)
+			{
+				var path = Handler.model.GetPathAtRow (index);
+				Handler.Tree.Model.EmitRowDeleted (path);
 			}
-		}
 
-		public bool ShowHeader {
-			get { return tree.HeadersVisible; }
-			set { tree.HeadersVisible = value; }
-		}
-		
-		public bool AllowColumnReordering {
-			get { return tree.Reorderable; }
-			set { tree.Reorderable = value; }
+			public override void RemoveAllItems ()
+			{
+				Handler.UpdateModel ();
+			}
 		}
 		
 		public IGridStore DataStore {
-			get { return store; }
+			get { return collection != null ? collection.DataStore : null; }
 			set {
-				store = value;
-				model = new GtkGridViewModel{ Handler = this };
-				tree.Model = new Gtk.TreeModelAdapter (model);
-			}
-		}
-		
-		public ContextMenu ContextMenu {
-			get { return contextMenu; }
-			set { contextMenu = value; }
-		}
-
-		public void SetValue (string path, int column, object value)
-		{
-			IGridItem item = model.GetItemAtPath (path);
-			if (item != null)
-				item.SetValue (column, value);
-		}
-
-
-		public void EndCellEditing (string path, int column)
-		{
-			var treePath = new Gtk.TreePath (path);
-			var row = treePath.Indices.Length > 0 ? treePath.Indices[0] : -1;
-			var item = model.GetItemAtPath (treePath);
-			Widget.OnEndCellEdit(new GridViewCellArgs(Widget.Columns[column], row, column, item));
-		}
-
-		public void BeginCellEditing (string path, int column)
-		{
-			var treePath = new Gtk.TreePath (path);
-			var row = treePath.Indices.Length > 0 ? treePath.Indices[0] : -1;
-			var item = model.GetItemAtPath (treePath);
-			Widget.OnBeginCellEdit (new GridViewCellArgs (Widget.Columns[column], row, column, item));
-		}
-
-
-		public bool AllowMultipleSelection
-		{
-			get { return tree.Selection.Mode == Gtk.SelectionMode.Multiple; }
-			set { tree.Selection.Mode = value ? Gtk.SelectionMode.Multiple : Gtk.SelectionMode.Browse; }
-		}
-
-		public IEnumerable<int> SelectedRows
-		{
-			get
-			{
-				var rows = tree.Selection.GetSelectedRows ();
-				foreach (var row in rows) {
-					yield return row.Indices[0];
-				}
+				if (collection != null)
+					collection.Unregister ();
+				collection = new CollectionHandler{ Handler = this };
+				collection.Register (value);
 			}
 		}
 
-		public void SelectAll ()
+		public override Gtk.TreeIter GetIterAtRow (int row)
 		{
-			tree.Selection.SelectAll ();
+			return model.GetIterAtRow (row);
 		}
 
-		public void SelectRow (int row)
+		public override object GetItem (Gtk.TreePath path)
 		{
-			tree.Selection.SelectIter (model.IterFromNode (row));
+			return model.GetItemAtPath (path);
 		}
 
-		public void UnselectRow (int row)
+		public GLib.Value GetColumnValue (IGridItem item, int dataColumn, int row)
 		{
-			tree.Selection.UnselectIter (model.IterFromNode (row));
+			int column;
+			if (ColumnMap.TryGetValue (dataColumn, out column)) {
+				var colHandler = (IGridColumnHandler)Widget.Columns[column].Handler;
+				return colHandler.GetValue (item, dataColumn, row);
+			}
+			return new GLib.Value ((string)null);
 		}
 
-		public void UnselectAll ()
+		public int GetRowOfItem (IGridItem item)
 		{
-			tree.Selection.UnselectAll ();
+			if (collection == null) return -1;
+			return collection.IndexOf (item);
 		}
 	}
 }

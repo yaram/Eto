@@ -13,7 +13,7 @@ namespace Eto.Platform.Wpf.Forms
 			get; set;
 		}
 
-		public IWidget Handler
+		public Widget Widget
 		{
 			get; set; 
 		}
@@ -36,11 +36,11 @@ namespace Eto.Platform.Wpf.Forms
 
 		public DialogResult ShowDialog (Control parent)
 		{
-			var element = parent.ControlObject as System.Windows.FrameworkElement;
-			var window = element.GetParent<System.Windows.Window>();
+			var element = parent == null ? null : parent.ControlObject as System.Windows.FrameworkElement;
+			var window = element == null ? null : element.GetParent<System.Windows.Window>();
 			System.Windows.MessageBoxResult result;
 			var icon = Convert (Type);
-            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Text : null);
+            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Title : null);
             if (window != null) result = System.Windows.MessageBox.Show(window, Text, caption, System.Windows.MessageBoxButton.OK, icon);
             else result = System.Windows.MessageBox.Show(Text, caption, System.Windows.MessageBoxButton.OK, icon);
 			
@@ -49,12 +49,12 @@ namespace Eto.Platform.Wpf.Forms
 
 		public DialogResult ShowDialog (Control parent, MessageBoxButtons buttons)
 		{
-			var element = parent.ControlObject as System.Windows.FrameworkElement;
-			var window = element.GetParent<System.Windows.Window> ();
+			var element = parent == null ? null: parent.ControlObject as System.Windows.FrameworkElement;
+			var window = element == null ? null: element.GetParent<System.Windows.Window>();
 			System.Windows.MessageBoxResult result;
 			var wpfbuttons = Convert(buttons);
 			var icon = Convert(Type);
-            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Text : null);
+            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Title : null);
             if (window != null) result = System.Windows.MessageBox.Show(window, Text, caption, wpfbuttons, icon);
             else result = System.Windows.MessageBox.Show(Text, caption, wpfbuttons, icon);
 			return Convert (result);

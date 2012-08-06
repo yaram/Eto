@@ -17,6 +17,8 @@ namespace Eto.Platform.Wpf.Forms.Controls
 		SplitterOrientation orientation;
 		SplitterFixedPanel fixedPanel;
 		int? position;
+		int? initialWidth;
+		int? initialHeight;
 		sw.Style style;
 
 		Control panel1;
@@ -33,7 +35,7 @@ namespace Eto.Platform.Wpf.Forms.Controls
 			Control.RowDefinitions.Add (new swc.RowDefinition ());
 
 			splitter = new swc.GridSplitter {
-				Background = sw.SystemColors.ControlLightLightBrush,
+				//Background = sw.SystemColors.ControlLightLightBrush,
 				ResizeBehavior = swc.GridResizeBehavior.PreviousAndNext
 			};
 			pane1 = new swc.DockPanel { LastChildFill = true };
@@ -52,7 +54,15 @@ namespace Eto.Platform.Wpf.Forms.Controls
 			UpdateOrientation ();
 			Control.Loaded += delegate {
 				UpdateColumnSizing ();
-				if (position != null)
+				if (FixedPanel == SplitterFixedPanel.Panel2) {
+					if (Orientation == SplitterOrientation.Horizontal && initialWidth != null && initialWidth.Value > 0)
+						Position = this.Size.Width - (initialWidth.Value - position.Value);
+					else if (Orientation == SplitterOrientation.Vertical && initialHeight != null && initialHeight.Value > 0)
+						Position = this.Size.Height - (initialHeight.Value - position.Value);
+					else if (position != null)
+						Position = position.Value;
+				}
+				else if (position != null)
 					Position = position.Value;
 			};
 
@@ -167,6 +177,7 @@ namespace Eto.Platform.Wpf.Forms.Controls
 			set {
 				orientation = value;
 				UpdateOrientation ();
+				UpdateColumnSizing ();
 			}
 		}
 
@@ -179,8 +190,10 @@ namespace Eto.Platform.Wpf.Forms.Controls
 			}
 		}
 
-		public int Position {
-			get {
+		public int Position
+		{
+			get
+			{
 				if (!Widget.Loaded)
 					return position ?? 0;
 				if (splitter.ResizeDirection == swc.GridResizeDirection.Columns)
@@ -188,41 +201,46 @@ namespace Eto.Platform.Wpf.Forms.Controls
 				else
 					return (int)Control.RowDefinitions[0].ActualHeight;
 			}
-			set {
+			set
+			{
 				if (!Widget.Loaded) {
 					position = value;
+					initialWidth = this.Size.Width;
+					initialHeight = this.Size.Height;
 					return;
 				}
 				if (splitter.ResizeDirection == swc.GridResizeDirection.Columns) {
 					var col1 = Control.ColumnDefinitions[0];
 					var col2 = Control.ColumnDefinitions[2];
+					var controlWidth = Control.IsLoaded ? Control.ActualWidth : Control.Width;
 					switch (fixedPanel) {
-						case SplitterFixedPanel.None:
-							var scale = (col1.Width.Value + col2.Width.Value) / Control.ActualWidth;
-							col1.Width = new sw.GridLength (value * scale, sw.GridUnitType.Star);
-							break;
-						case SplitterFixedPanel.Panel1:
-							col1.Width = new sw.GridLength (value, sw.GridUnitType.Pixel);
-							break;
-						case SplitterFixedPanel.Panel2:
-							col2.Width = new sw.GridLength (Control.ActualWidth - value, sw.GridUnitType.Pixel);
-							break;
+					case SplitterFixedPanel.None:
+						var scale = (col1.Width.Value + col2.Width.Value) / controlWidth;
+						col1.Width = new sw.GridLength (value * scale, sw.GridUnitType.Star);
+						break;
+					case SplitterFixedPanel.Panel1:
+						col1.Width = new sw.GridLength (value, sw.GridUnitType.Pixel);
+						break;
+					case SplitterFixedPanel.Panel2:
+						col2.Width = new sw.GridLength (controlWidth - value, sw.GridUnitType.Pixel);
+						break;
 					}
 				}
 				else {
 					var row1 = Control.RowDefinitions[0];
 					var row2 = Control.RowDefinitions[2];
+					var controlHeight = Control.IsLoaded ? Control.ActualHeight : Control.Height;
 					switch (fixedPanel) {
-						case SplitterFixedPanel.None:
-							var scale = (row1.Height.Value + row2.Height.Value) / Control.ActualHeight;
-							row1.Height = new sw.GridLength (value * scale, sw.GridUnitType.Star);
-							break;
-						case SplitterFixedPanel.Panel1:
-							row1.Height = new sw.GridLength (value, sw.GridUnitType.Pixel);
-							break;
-						case SplitterFixedPanel.Panel2:
-							row2.Height = new sw.GridLength (Control.ActualHeight - value, sw.GridUnitType.Pixel);
-							break;
+					case SplitterFixedPanel.None:
+						var scale = (row1.Height.Value + row2.Height.Value) / controlHeight;
+						row1.Height = new sw.GridLength (value * scale, sw.GridUnitType.Star);
+						break;
+					case SplitterFixedPanel.Panel1:
+						row1.Height = new sw.GridLength (value, sw.GridUnitType.Pixel);
+						break;
+					case SplitterFixedPanel.Panel2:
+						row2.Height = new sw.GridLength (controlHeight - value, sw.GridUnitType.Pixel);
+						break;
 					}
 				}
 			}

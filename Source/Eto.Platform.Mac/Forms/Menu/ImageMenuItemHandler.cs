@@ -8,41 +8,45 @@ using MonoMac.ObjCRuntime;
 
 namespace Eto.Platform.Mac
 {
-	public class ImageMenuItemHandler : MenuHandler<NSMenuItem, ImageMenuItem>, IImageMenuItem
+
+	public class ImageMenuItemHandler : MenuHandler<NSMenuItem, ImageMenuItem>, IImageMenuItem, IMenuActionHandler
 	{
 		Icon icon;
 		
-		[Register("EtoActionHandler")]
-		public class ActionHandler : NSObject
-		{
-			public ImageMenuItemHandler Handler { get; set; }
-			
-			[Export("activate:")]
-			public void Activate(NSObject sender)
-			{
-				Handler.Widget.OnClick (EventArgs.Empty);	
-			}
-			
-			[Export("validateMenuItem:")]
-			public bool ValidateMenuItem(NSMenuItem item)
-			{
-				return Handler.Enabled;
-			}
-		}
-		
-		static Selector selActivate = new Selector("activate:");
+		public static bool UseImages = false;
 
 		public ImageMenuItemHandler ()
 		{
 			Control = new NSMenuItem ();
 			Enabled = true;
-			Control.Target = new ActionHandler{ Handler = this };
-			Control.Action = selActivate;
+			Control.Target = new MenuActionHandler{ Handler = this };
+			Control.Action = MenuActionHandler.selActivate;
 		}
-
+		
+		public void HandleClick ()
+		{
+			Widget.OnClick (EventArgs.Empty);
+		}
+		
+		
+		public override void AttachEvent (string handler)
+		{
+			switch (handler) {
+			case ImageMenuItem.ValidateEvent:
+				// handled in MenuActionHandler
+				break;
+			default:
+				base.AttachEvent (handler);
+				break;
+			}
+		}
+		
 		#region IMenuItem Members
-
-		public bool Enabled { get; set; }
+		
+		public bool Enabled {
+			get { return Control.Enabled; }
+			set { Control.Enabled = value; }
+		}
 
 		public string Text {
 			get	{ return Control.Title; }
@@ -74,16 +78,16 @@ namespace Eto.Platform.Mac
 			get { return icon; }
 			set {
 				icon = value;
-				/*
-				if (icon != null) {
-					var image = ((NSImage)icon.ControlObject);
-					var rep = image.BestRepresentation (new System.Drawing.RectangleF(0, 0, 16, 16), null, new NSDictionary());
-					var image2 = new NSImage();
-					image2.AddRepresentation (rep);
-					Control.Image = image2;
+				if (UseImages) {
+					if (icon != null) {
+						var image = ((NSImage)icon.ControlObject);
+						var rep = image.BestRepresentation (new System.Drawing.RectangleF (0, 0, 16, 16), null, new NSDictionary ());
+						var image2 = new NSImage ();
+						image2.AddRepresentation (rep);
+						Control.Image = image2;
+					} else
+						Control.Image = null;
 				}
-				else Control.Image = null;
-				*/
 			}
 		}
 
@@ -95,6 +99,9 @@ namespace Eto.Platform.Mac
 			//if (Control.HasSubmenu) Control.Submenu.Title = Control.Title;
 		}
 
+		MenuActionItem IMenuActionHandler.Widget {
+			get { return Widget; }
+		}
 
 	}
 }

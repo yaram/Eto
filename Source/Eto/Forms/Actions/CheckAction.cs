@@ -31,7 +31,7 @@ namespace Eto.Forms
 		
 		public static bool RemoveCheckHandler(this ActionCollection actions, string actionID, EventHandler<EventArgs> checkChangedHandler)
 		{
-			CheckAction action = actions.Find(actionID) as CheckAction;
+			CheckAction action = actions[actionID] as CheckAction;
 			if (action != null)
 			{
 				action.CheckedChanged -= checkChangedHandler;
@@ -88,6 +88,8 @@ namespace Eto.Forms
 			tbb.ID = this.ID;
 			tbb.Checked = Checked;
 			tbb.Enabled = this.Enabled;
+			if (!string.IsNullOrEmpty (ToolBarItemStyle))
+				tbb.Style = ToolBarItemStyle;
 			if (ShowLabel || actionItem.ShowLabel || toolBar.TextAlign != ToolBarTextAlign.Right) tbb.Text = ToolBarText;
 			if (Icon != null) tbb.Icon = Icon;
 			new ToolBarConnector(this, tbb);

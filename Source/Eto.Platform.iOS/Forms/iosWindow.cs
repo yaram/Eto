@@ -26,6 +26,24 @@ namespace Eto.Platform.iOS.Forms
 			}
 		}
 		
+		public double Opacity {
+			get { return Control.Alpha; }
+			set { Control.Alpha = (float)value; }
+		}
+
+		public override void AttachEvent (string handler)
+		{
+			switch (handler) {
+			case Window.ClosedEvent:
+			case Window.ClosingEvent:
+				// TODO
+				break;
+			default:
+				base.AttachEvent (handler);
+				break;
+			}
+		}
+		
 		#region IWindow implementation
 		
 		public virtual void Close ()
@@ -45,7 +63,7 @@ namespace Eto.Platform.iOS.Forms
 
 		#region ITextControl implementation
 		
-		public abstract string Text { get; set; }
+		public abstract string Title { get; set; }
 
 		#endregion
 

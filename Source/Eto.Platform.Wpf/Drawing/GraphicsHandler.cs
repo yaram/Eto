@@ -6,6 +6,7 @@ using swm = System.Windows.Media;
 using sw = System.Windows;
 using swmi = System.Windows.Media.Imaging;
 using Eto.Drawing;
+using System.Globalization;
 
 namespace Eto.Platform.Wpf.Drawing
 {
@@ -99,12 +100,12 @@ namespace Eto.Platform.Wpf.Drawing
 			Control.DrawGeometry (null, pen, geometry);
 		}
 
-		public void DrawImage (IImage image, int x, int y)
+		public void DrawImage (Image image, int x, int y)
 		{
 			DrawImage (image, x, y, image.Size.Width, image.Size.Height);
 		}
 
-		public void DrawImage (IImage image, int x, int y, int width, int height)
+		public void DrawImage (Image image, int x, int y, int width, int height)
 		{
 			var src = image.ControlObject as swm.ImageSource;
 			Control.PushGuidelineSet (new swm.GuidelineSet (new double[] { x , x  + width }, new double[] { y , y + height }));
@@ -112,7 +113,7 @@ namespace Eto.Platform.Wpf.Drawing
 			Control.Pop ();
 		}
 
-		public void DrawImage (IImage image, Rectangle source, Rectangle destination)
+		public void DrawImage (Image image, Rectangle source, Rectangle destination)
 		{
 			var src = image.ControlObject as swm.ImageSource;
 			Control.PushClip (new swm.RectangleGeometry (Generator.Convert (destination)));
@@ -141,13 +142,18 @@ namespace Eto.Platform.Wpf.Drawing
 
 		public void DrawText (Font font, Color color, int x, int y, string text)
 		{
-			//var formattedText = new swm.FormattedText(
-			//Control.DrawText(
+			var fontHandler = font.Handler as FontHandler;
+			var brush = new swm.SolidColorBrush(Generator.Convert(color));
+			var formattedText = new swm.FormattedText(text, CultureInfo.CurrentUICulture, sw.FlowDirection.LeftToRight, fontHandler.Typeface, font.Size, brush);
+			Control.DrawText (formattedText, new sw.Point (x, y));
 		}
 
 		public SizeF MeasureString (Font font, string text)
 		{
-			return SizeF.Empty;
+			var fontHandler = font.Handler as FontHandler;
+			var brush = new swm.SolidColorBrush (swm.Colors.White);
+			var formattedText = new swm.FormattedText (text, CultureInfo.CurrentUICulture, sw.FlowDirection.LeftToRight, fontHandler.Typeface, font.Size, brush);
+			return new SizeF ((float)formattedText.WidthIncludingTrailingWhitespace, (float)formattedText.Height);
 		}
 
 		public Region ClipRegion

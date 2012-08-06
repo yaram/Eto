@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Eto.Drawing;
-using Eto.Collections;
+using System.Collections.ObjectModel;
 
 namespace Eto.Forms
 {
@@ -10,45 +10,46 @@ namespace Eto.Forms
 	{
 	}
 	
-	public class MenuItem : Menu
+	public abstract class MenuItem : Menu
 	{
-		public MenuItem(Generator g, Type type) : base(g, type)
+		protected MenuItem (Generator g, Type type, bool initialize = true) 
+			: base(g, type, initialize)
 		{
 		}
 	}
 
-
-	public class MenuItemCollection : BaseList<MenuItem>
+	public class MenuItemCollection : Collection<MenuItem>
 	{
 		ISubMenu subMenu;
 		
-		public ISubMenuWidget Parent
-		{
-			get; private set;
+		public ISubMenuWidget Parent {
+			get;
+			private set;
 		}
 		
-		public MenuItemCollection(ISubMenuWidget parent, ISubMenu parentMenu)
+		public MenuItemCollection (ISubMenuWidget parent, ISubMenu parentMenu)
 		{
 			this.Parent = parent;
 			this.subMenu = parentMenu;
 		}
-
-		protected override void OnAdded (ListEventArgs<MenuItem> e)
+		
+		protected override void InsertItem (int index, MenuItem item)
 		{
-			base.OnAdded (e);
-			subMenu.AddMenu(IndexOf(e.Item), e.Item);
+			base.InsertItem (index, item);
+			subMenu.AddMenu (index, item);
 		}
 		
-		protected override void OnRemoved (ListEventArgs<MenuItem> e)
+		protected override void RemoveItem (int index)
 		{
-			base.OnRemoved (e);
-			subMenu.RemoveMenu(e.Item);
+			var item = this [index];
+			base.RemoveItem (index);
+			subMenu.RemoveMenu (item);
 		}
 		
-		public override void Clear()
+		protected override void ClearItems ()
 		{
-			base.Clear ();
-			subMenu.Clear();
+			base.ClearItems ();
+			subMenu.Clear ();
 		}
 	}
 }

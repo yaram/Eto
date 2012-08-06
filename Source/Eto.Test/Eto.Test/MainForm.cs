@@ -38,13 +38,18 @@ namespace Eto.Test
 
 		public MainForm ()
 		{
-			this.Text = "Test Application";
+			this.Title = "Test Application";
 			this.Style = "main";
+#if DESKTOP
 			this.Icon = Icon.FromResource ("Eto.Test.TestIcon.ico");
+#endif
 			this.ClientSize = new Size (900, 650);
 			//this.Opacity = 0.5;
 
-			HandleEvent (MainForm.MaximizedEvent, MainForm.MinimizedEvent, MainForm.ClosedEvent, MainForm.ClosingEvent);
+#if DESKTOP
+			HandleEvent (MainForm.MaximizedEvent, MainForm.MinimizedEvent);
+#endif
+			HandleEvent (MainForm.ClosedEvent, MainForm.ClosingEvent);
 
 			/* Option 1: use actions to generate menu and toolbar (recommended)
 			 */
@@ -90,9 +95,34 @@ namespace Eto.Test
 			};
 
 			splitter.Panel1 = this.ContentContainer;
-			splitter.Panel2 = DockLayout.CreatePanel (this.EventLog, new Padding (5));
+			splitter.Panel2 = this.EventLogSection();
 
 			return splitter;
+		}
+		Control EventLogSection()
+		{
+			var layout = new DynamicLayout(new Panel());
+			
+			layout.BeginHorizontal ();
+			layout.Add (EventLog, true);
+			
+			layout.BeginVertical ();
+			layout.Add (ClearButton());
+			layout.Add (null);
+			layout.EndVertical ();
+			layout.EndHorizontal ();
+			return layout.Container;
+		}
+		
+		Control ClearButton()
+		{
+			var control = new Button{
+				Text = "Clear"
+			};
+			control.Click += (sender, e) => {
+				EventLog.Text = string.Empty;
+			};
+			return control;
 		}
 
 		void GenerateMenuToolBarActions ()
@@ -101,7 +131,7 @@ namespace Eto.Test
 			var args = new GenerateActionArgs ();
 
 			// generate actions to use in menus and toolbars
-			Application.Instance.GetSystemActions (args);
+			Application.Instance.GetSystemActions (args, true);
 
 			args.Actions.Add (new Actions.About ());
 			args.Actions.Add (new Actions.Quit ());
@@ -118,35 +148,16 @@ namespace Eto.Test
 		void GenerateMenu (GenerateActionArgs args)
 		{
 			var file = args.Menu.FindAddSubMenu ("&File", 100);
-			var edit = args.Menu.FindAddSubMenu ("&Edit", 200);
-			var window = args.Menu.FindAddSubMenu ("&Window", 900);
-			var help = args.Menu.FindAddSubMenu ("Help", 1000);
+			args.Menu.FindAddSubMenu ("&Edit", 200);
+			args.Menu.FindAddSubMenu ("&Window", 900);
+			var help = args.Menu.FindAddSubMenu ("&Help", 1000);
 
 			if (Generator.ID == "mac") {
 				// have a nice OS X style menu
 
-				var main = args.Menu.FindAddSubMenu ("Test Application", 0);
+				var main = args.Menu.FindAddSubMenu (Application.Instance.Name, 0);
 				main.Actions.Add (Actions.About.ActionID, 0);
-				main.Actions.AddSeparator ();
-				main.Actions.Add ("mac_hide", 700);
-				main.Actions.Add ("mac_hideothers", 700);
-				main.Actions.Add ("mac_showall", 700);
-				main.Actions.AddSeparator (900);
 				main.Actions.Add (Actions.Quit.ActionID, 1000);
-
-				file.Actions.Add ("mac_performClose", 900);
-
-				edit.Actions.Add ("mac_undo", 100);
-				edit.Actions.Add ("mac_redo", 100);
-				edit.Actions.AddSeparator (200);
-				edit.Actions.Add ("mac_cut", 200);
-				edit.Actions.Add ("mac_copy", 200);
-				edit.Actions.Add ("mac_paste", 200);
-				edit.Actions.Add ("mac_delete", 200);
-				edit.Actions.Add ("mac_selectAll", 200);
-
-				window.Actions.Add ("mac_performMiniaturize");
-				window.Actions.Add ("mac_performZoom");
 			}
 			else {
 				// windows/gtk style window
@@ -155,14 +166,19 @@ namespace Eto.Test
 				help.Actions.Add (Actions.About.ActionID);
 			}
 
+#if DESKTOP
 			this.Menu = args.Menu.GenerateMenuBar ();
+#endif
 		}
 
 		void GenerateToolBar (GenerateActionArgs args)
 		{
 			args.ToolBar.Add (Actions.Quit.ActionID);
 			args.ToolBar.Add (Actions.About.ActionID);
+#if DESKTOP
+			// TODO for mobile
 			this.ToolBar = args.ToolBar.GenerateToolBar ();
+#endif
 		}
 
 		#region Generate Menu & Toolbar Manually
@@ -200,6 +216,7 @@ namespace Eto.Test
 		*/
 		#endregion
 
+#if DESKTOP
 		public override void OnMaximized (EventArgs e)
 		{
 			base.OnMaximized (e);
@@ -210,12 +227,6 @@ namespace Eto.Test
 		{
 			base.OnMinimized (e);
 			Log.Write (this, "Minimized");
-		}
-
-		public override void OnClosed (EventArgs e)
-		{
-			base.OnClosed (e);
-			Log.Write (this, "Closed");
 		}
 
 		public override void OnClosing (System.ComponentModel.CancelEventArgs e)
@@ -230,6 +241,14 @@ namespace Eto.Test
 			if (result == DialogResult.No) e.Cancel = true;
 			*/
 		}
+#endif
+
+		public override void OnClosed (EventArgs e)
+		{
+			base.OnClosed (e);
+			Log.Write (this, "Closed");
+		}
+
 	}
 }
 

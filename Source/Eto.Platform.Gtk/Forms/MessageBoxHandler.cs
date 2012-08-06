@@ -9,7 +9,7 @@ namespace Eto.Platform.GtkSharp
 		
 		public string Text { get; set; }
 		public string Caption { get; set; }
-		public IWidget Handler { get; set; }
+		public Widget Widget { get; set; }
 		public MessageBoxType Type { get; set; }
 		
 		public void Initialize()
@@ -26,7 +26,7 @@ namespace Eto.Platform.GtkSharp
 			}
 			control = new Gtk.MessageDialog((Gtk.Window)c, Gtk.DialogFlags.Modal, Convert (Type), Gtk.ButtonsType.Ok, false, Text);
 			control.TypeHint = Gdk.WindowTypeHint.Dialog;
-            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Text : null);
+            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Title : null);
             if (!string.IsNullOrEmpty(caption)) control.Title = caption;
 			int ret = control.Run();
 			control.Destroy();
@@ -42,7 +42,7 @@ namespace Eto.Platform.GtkSharp
 			}
 			control = new Gtk.MessageDialog((Gtk.Window)c, Gtk.DialogFlags.Modal, Convert (Type), Convert(buttons), false, Text);
 			control.TypeHint = Gdk.WindowTypeHint.Dialog;
-            var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Text : null);
+			var caption = Caption ?? ((parent != null && parent.ParentWindow != null) ? parent.ParentWindow.Title : null);
             if (!string.IsNullOrEmpty(caption)) control.Title = caption;
 			if (buttons == MessageBoxButtons.YesNoCancel)
 			{

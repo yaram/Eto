@@ -12,9 +12,12 @@ namespace Eto.Forms
 			RadioMenuItem mi = new RadioMenuItem(menu.Generator, (Controller != null) ? Controller.menuItem : null);
 			mi.Text = MenuText;
 			mi.Shortcut = Accelerator;
+			mi.Enabled = this.Enabled;
+			mi.Checked = Checked;
+			if (!string.IsNullOrEmpty (MenuItemStyle))
+				mi.Style = MenuItemStyle;
 			
 			new MenuConnector(this, mi);
-			mi.Checked = Checked;
 			menuItem = mi;
 			return mi;
 		}

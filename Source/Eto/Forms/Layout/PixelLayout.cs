@@ -1,10 +1,11 @@
 using System;
 using Eto.Drawing;
 using System.Collections.Generic;
-using System.Windows.Markup;
 using System.Collections;
-using Eto.Collections;
+#if DESKTOP
+using System.Windows.Markup;
 using System.Xaml;
+#endif
 
 namespace Eto.Forms
 {
@@ -12,11 +13,13 @@ namespace Eto.Forms
 	{
 	}
 
+#if DESKTOP
 	[ContentProperty ("Children")]
+#endif
 	public class PixelLayout : Layout
 	{
 		IPixelLayout inner;
-		BaseList<Control> children;
+		IList<Control> children;
 		List<Control> controls = new List<Control> ();
 		
 		public override IEnumerable<Control> Controls {
@@ -25,12 +28,10 @@ namespace Eto.Forms
 			}
 		}
 
-		public BaseList<Control> Children
-		{
-			get
-			{
+		public IList<Control> Children {
+			get {
 				if (children == null) {
-					children = new BaseList<Control> ();
+					children = new List<Control> ();
 				}
 				return children;
 			}
@@ -46,7 +47,8 @@ namespace Eto.Forms
 		{
 			inner = (IPixelLayout)Handler;
 		}
-
+		
+#if DESKTOP
 		static AttachableMemberIdentifier LocationProperty = new AttachableMemberIdentifier (typeof (PixelLayout), "Location");
 
 		public static Point GetLocation (Control control)
@@ -61,6 +63,7 @@ namespace Eto.Forms
 			if (layout != null)
 				layout.Move (control, value);
 		}
+#endif
 
 		public void Add (Control control, int x, int y)
 		{
@@ -106,9 +109,13 @@ namespace Eto.Forms
 		public override void EndInit ()
 		{
 			base.EndInit ();
-			foreach (var control in children) {
-				Add (control, GetLocation (control));
+#if DESKTOP
+			if (children != null) {
+				foreach (var control in children) {
+					Add (control, GetLocation (control));
+				}
 			}
+#endif
 		}
 	}
 }

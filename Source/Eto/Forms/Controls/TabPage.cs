@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
-using Eto.Collections;
 using Eto.Drawing;
+using System.Collections.ObjectModel;
 
 namespace Eto.Forms
 {
@@ -14,15 +14,20 @@ namespace Eto.Forms
 
 	public class TabPage : Container, IImageListItem
 	{
-		ITabPage inner;
+		ITabPage handler;
 		
-		public TabPage () : this(Generator.Current)
+		public TabPage () : this (Generator.Current)
 		{
 		}
 		
-		public TabPage (Generator g) : base(g, typeof(ITabPage))
+		public TabPage (Generator g) : this (g, typeof(ITabPage))
 		{
-			inner = (ITabPage)Handler;
+		}
+		
+		protected TabPage (Generator generator, Type type, bool initialize = true)
+			: base (generator, type, initialize)
+		{
+			handler = (ITabPage)Handler;
 		}
 		
 		public event EventHandler<EventArgs> Click;
@@ -34,42 +39,43 @@ namespace Eto.Forms
 		}
 		
 		public string Text {
-			get { return inner.Text; }
-			set { inner.Text = value; }
+			get { return handler.Text; }
+			set { handler.Text = value; }
 		}
 
 		public Image Image {
-			get { return inner.Image; }
-			set { inner.Image = value; }
+			get { return handler.Image; }
+			set { handler.Image = value; }
 		}
 		
-		public virtual string Key {
-			get;
-			set;
-		}
+		public virtual string Key { get; set; }
 	}
 
-	public class TabPageCollection : BaseList<TabPage>
+	public class TabPageCollection : Collection<TabPage>
 	{
 		TabControl control;
 
-		public TabPageCollection (TabControl control)
+		internal TabPageCollection (TabControl control)
 		{
 			this.control = control;
 		}
-
-		protected override void OnAdded (ListEventArgs<TabPage> e)
+		
+		protected override void InsertItem (int index, TabPage item)
 		{
-			base.OnAdded (e);
-			e.Item.SetParent (control);
-			control.AddTab (e.Item);
+			base.InsertItem (index, item);
+			control.InsertTab (index, item);
+		}
+
+		protected override void ClearItems ()
+		{
+			base.ClearItems ();
+			control.ClearTabs ();
 		}
 		
-		protected override void OnRemoved (ListEventArgs<TabPage> e)
+		protected override void RemoveItem (int index)
 		{
-			base.OnRemoved (e);
-			e.Item.SetParent (null);
-			control.RemoveTab (e.Item);
+			control.RemoveTab (index, this [index]);
+			base.RemoveItem (index);
 		}
 	}
 }

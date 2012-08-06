@@ -18,6 +18,7 @@ namespace Eto.Platform.Wpf.Forms
 		public void RunIteration()
 		{
 		}
+		private bool shutdown;
 
 		public void Quit()
 		{
@@ -27,15 +28,23 @@ namespace Eto.Platform.Wpf.Forms
 				cancel |= window.IsVisible;
 			}
 			if (!cancel)
+			{
 				Control.Shutdown();
+				shutdown = true;
+			}
 		}
 
-		public void InvokeOnMainThread (Action action)
+		public void Invoke (Action action)
 		{
 			Control.Dispatcher.Invoke (action);
 		}
 
-		public void GetSystemActions(GenerateActionArgs args)
+		public void AsyncInvoke (Action action)
+		{
+			Control.Dispatcher.BeginInvoke (action);
+		}
+
+		public void GetSystemActions (GenerateActionArgs args, bool addStandardItems)
 		{
 		}
 
@@ -57,6 +66,7 @@ namespace Eto.Platform.Wpf.Forms
 		public void Run (string[] args)
 		{
 			Widget.OnInitialized (EventArgs.Empty);
+			if (shutdown) return;
 			if (Widget.MainForm != null)
 				Control.Run ((System.Windows.Window)Widget.MainForm.ControlObject);
 			else

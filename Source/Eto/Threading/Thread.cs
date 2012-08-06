@@ -2,15 +2,15 @@ using System;
 
 namespace Eto.Threading
 {
-	
-	
 	public interface IThread : IWidget
 	{
-		void Create();
-		void CreateCurrent();
+		void Create ();
 
-		void Start();
-		void Abort();
+		void CreateCurrent ();
+		
+		void Start ();
+
+		void Abort ();
 		
 		bool IsAlive { get; }
 	}
@@ -20,16 +20,14 @@ namespace Eto.Threading
 		IThread inner;
 		Action action;
 		
-		public static Thread CurrentThread
-		{
-			get
-			{
-				var thread = new Thread();
-				thread.inner.CreateCurrent();
+		public static Thread CurrentThread {
+			get {
+				var thread = new Thread ();
+				thread.inner.CreateCurrent ();
 				return thread;
 			}
 		}
-
+		
 		private Thread ()
 			: base(Generator.Current, typeof(IThread))
 		{
@@ -46,26 +44,26 @@ namespace Eto.Threading
 		{
 			inner = (IThread)Handler;
 			this.action = action;
-			inner.Create();
+			inner.Create ();
 		}
 		
-		public virtual void OnExecuted()
+		public virtual void OnExecuted ()
 		{
-			if (action != null) action();
+			if (action != null)
+				action ();
 		}
 		
-		public void Start()
+		public void Start ()
 		{
-			inner.Start();
+			inner.Start ();
 		}
 		
-		public void Abort()
+		public void Abort ()
 		{
-			inner.Abort();
+			inner.Abort ();
 		}
 		
-		public bool IsAlive
-		{
+		public bool IsAlive {
 			get { return inner.IsAlive; }
 		}
 	}

@@ -26,10 +26,15 @@ namespace Eto.Platform.Mac
 
 		public string GetFolderPath (EtoSpecialFolder folder)
 		{
-			NSSearchPathDirectory dir;
-			NSSearchPathDomain domain;
-			Convert (folder, out dir, out domain);
-			return NSSearchPath.GetDirectories (dir, domain, true).FirstOrDefault ();
+			switch (folder) {
+			case EtoSpecialFolder.ApplicationResources:
+				return NSBundle.MainBundle.ResourcePath;
+			default:
+				NSSearchPathDirectory dir;
+				NSSearchPathDomain domain;
+				Convert (folder, out dir, out domain);
+				return NSSearchPath.GetDirectories (dir, domain, true).FirstOrDefault ();
+			}
 		}
 
 		#region IWidget implementation
@@ -38,7 +43,7 @@ namespace Eto.Platform.Mac
 		{
 		}
 
-		public IWidget Handler { get; set; }
+		public Widget Widget { get; set; }
 		
 		#endregion
 	}

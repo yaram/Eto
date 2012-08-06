@@ -113,7 +113,7 @@ namespace Eto.Platform.Wpf.Forms
 			get { return Control.IsVisible; }
 			set
 			{
-				Control.Visibility = (value) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Hidden;
+				Control.Visibility = (value) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
 			}
 		}
 
@@ -248,6 +248,11 @@ namespace Eto.Platform.Wpf.Forms
 
 		public virtual void SetParentLayout (Layout layout)
 		{
+		}
+
+		public void MapPlatformAction (string systemAction, BaseAction action)
+		{
+			
 		}
 	}
 }

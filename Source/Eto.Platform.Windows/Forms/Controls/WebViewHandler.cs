@@ -1,14 +1,15 @@
 using System;
 using SWF = System.Windows.Forms;
 using Eto.Forms;
+using Eto.Platform.CustomControls;
 
 namespace Eto.Platform.Windows.Forms.Controls
 {
-	public class WebViewHandler : WindowsControl<System.Windows.Forms.WebBrowser, WebView>, IWebView
+	public class WebViewHandler : WindowsControl<SWF.WebBrowser, WebView>, IWebView
 	{
 		public WebViewHandler ()
 		{
-			this.Control = new SWF.WebBrowser ();
+			this.Control = new SWF.WebBrowser { IsWebBrowserContextMenuEnabled = false };
 		}
 		
 		public override void AttachEvent (string handler)
@@ -49,17 +50,10 @@ namespace Eto.Platform.Windows.Forms.Controls
 			}
 		}
 		
-		public void ExecuteScript (string script)
+		public string ExecuteScript (string script)
 		{
-			var scriptElement = this.Control.Document.GetElementById ("eto_forms_execute_script");
-			if (scriptElement == null) {
-				scriptElement = this.Control.Document.CreateElement ("script");
-				scriptElement.Id = "eto_forms_execute_script";
-				var head = this.Control.Document.GetElementsByTagName ("head") [0];
-				head.AppendChild (scriptElement);
-			}
-			scriptElement.SetAttribute("text", "function eto_forms_execute_script() { " + script + " }");
-			this.Control.Document.InvokeScript ("eto_forms_execute_script");
+			var fullScript = string.Format ("var fn = function() {{ {0} }}; fn();", script);
+			return Convert.ToString (Control.Document.InvokeScript ("eval", new object[] { fullScript }));
 		}
 		
 		public void Stop ()
@@ -94,11 +88,21 @@ namespace Eto.Platform.Windows.Forms.Controls
 			}
 		}
 		
-		public void LoadHtml (string html)
-		{
-			this.Control.DocumentText = html;
-		}
+		HttpServer server;
 
+		public void LoadHtml (string html, Uri baseUri)
+		{
+			if (baseUri != null) {
+				if (server == null)
+					server = new HttpServer ();
+				server.SetHtml (html, baseUri != null ? baseUri.LocalPath : null);
+				Control.Navigate (server.Url);
+			}
+			else
+				this.Control.DocumentText = html;
+
+		}
+		
 	}
 }
 

@@ -3,7 +3,7 @@ using MonoMac.Foundation;
 using System.Collections.Generic;
 using MonoMac.ObjCRuntime;
 
-namespace Eto.Platform.Mac
+namespace Eto.Platform.Mac.Forms
 {
 	public interface IMacControl
 	{
@@ -51,17 +51,17 @@ namespace Eto.Platform.Mac
 			notifications.Remove (observer);
 		}
 
-		protected void AddMethod (Selector selector, Delegate action, string arguments, object control = null)
+		public void AddMethod (Selector selector, Delegate action, string arguments, object control = null)
 		{
 			control = control ?? EventObject;
 			var type = control.GetType ();
 			if (!typeof(IMacControl).IsAssignableFrom (type))
 				throw new EtoException("Control does not inherit from IMacControl");
 			var cls = new Class(type);
-			cls.AddMethod (selector, action, arguments);
+			cls.AddMethod (selector.Handle, action, arguments);
 		}
 		
-		protected NSObject AddObserver (NSString key, Action<ObserverActionArgs> action, NSObject control = null)
+		public NSObject AddObserver (NSString key, Action<ObserverActionArgs> action, NSObject control = null)
 		{
 			if (notifications == null)
 				notifications = new List<NSObject> ();

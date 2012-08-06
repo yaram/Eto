@@ -9,9 +9,6 @@
     <ProjectTypeGuids>{6BC8ED88-2882-458C-8E55-DFD12B67127B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <RootNamespace>Eto</RootNamespace>
-    <AssemblyName>Eto</AssemblyName>
-    <ReleaseVersion>
-    </ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,6 +19,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <AssemblyName>Eto</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -31,13 +29,63 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <DefineConstants>MOBILE</DefineConstants>
+    <AssemblyName>Eto</AssemblyName>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
-    <Reference Include="monotouch" />
-  </ItemGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'iPhoneSimulator|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhoneSimulator</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Debug</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+    <MtouchLink>None</MtouchLink>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+    <MtouchLink>None</MtouchLink>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\Debug</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\AppStore</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\iPhone\Release</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AssemblyName>EtoiOS</AssemblyName>
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -49,9 +97,6 @@
     <Compile Include="WeakEventHandler.cs" />
     <Compile Include="Widget.cs" />
     <Compile Include="WidgetHandler.cs" />
-    <Compile Include="Collections\BaseList.cs" />
-    <Compile Include="Collections\ListItemEventHandler.cs" />
-    <Compile Include="Collections\LookupList.cs" />
     <Compile Include="Drawing\Bitmap.cs" />
     <Compile Include="Drawing\Color.cs" />
     <Compile Include="Drawing\Font.cs" />
@@ -79,13 +124,10 @@
     <Compile Include="IO\VirtualDirectoryType.cs" />
     <Compile Include="IO\VirtualFileEntry.cs" />
     <Compile Include="IO\VirtualFileInfo.cs" />
-    <Compile Include="Misc\ArrayExtensions.cs" />
     <Compile Include="Misc\Platform.cs" />
-    <Compile Include="Misc\Url.cs" />
     <Compile Include="Forms\Application.cs" />
     <Compile Include="Forms\Container.cs" />
     <Compile Include="Forms\Dialog.cs" />
-    <Compile Include="Forms\DockLayout.cs" />
     <Compile Include="Forms\FileDialog.cs" />
     <Compile Include="Forms\Form.cs" />
     <Compile Include="Forms\GenerateActionArgs.cs" />
@@ -93,10 +135,8 @@
     <Compile Include="Forms\Layout.cs" />
     <Compile Include="Forms\MessageBox.cs" />
     <Compile Include="Forms\OpenFileDialog.cs" />
-    <Compile Include="Forms\PixelLayout.cs" />
     <Compile Include="Forms\SaveFileDialog.cs" />
     <Compile Include="Forms\SelectFolderDialog.cs" />
-    <Compile Include="Forms\TableLayout.cs" />
     <Compile Include="Forms\Window.cs" />
     <Compile Include="Forms\Actions\ActionItem.cs" />
     <Compile Include="Forms\Actions\ActionItemCollection.cs" />
@@ -131,11 +171,9 @@
     <Compile Include="Forms\ToolBar\SeparatorToolBarItem.cs" />
     <Compile Include="Forms\ToolBar\ToolBar.cs" />
     <Compile Include="Forms\ToolBar\ToolBarButton.cs" />
-    <Compile Include="Forms\ToolBar\ToolBarInteractionItem.cs" />
     <Compile Include="Forms\ToolBar\ToolBarItem.cs" />
     <Compile Include="CancelEventHandler.cs" />
     <Compile Include="Forms\Controls\Navigation.cs" />
-    <Compile Include="Threading\Thread.cs" />
     <Compile Include="Forms\Actions\ActionCollection.cs" />
     <Compile Include="Misc\XmlExtensions.cs" />
     <Compile Include="Drawing\BitmapData.cs" />
@@ -149,9 +187,7 @@
     <Compile Include="Forms\Controls\WebView.cs" />
     <Compile Include="Style.cs" />
     <Compile Include="Forms\Controls\Scrollable.mobile.cs" />
-    <Compile Include="Forms\DynamicLayout.cs" />
     <Compile Include="Forms\ListItem.cs" />
-    <Compile Include="Forms\TreeItem.cs" />
     <Compile Include="Forms\Controls\EnumComboBox.cs" />
     <Compile Include="Drawing\ColorCMYK.cs" />
     <Compile Include="Drawing\ColorHSB.cs" />
@@ -159,13 +195,68 @@
     <Compile Include="Forms\Controls\Slider.cs" />
     <Compile Include="Forms\Controls\NavigationItem.cs" />
     <Compile Include="Forms\Controls\Drawable.mobile.cs" />
+    <Compile Include="Drawing\ColorConverter.cs" />
+    <Compile Include="Drawing\PaddingConverter.cs" />
+    <Compile Include="Drawing\PointConverter.cs" />
+    <Compile Include="Drawing\PointFConverter.cs" />
+    <Compile Include="Drawing\RectangleConverter.cs" />
+    <Compile Include="Drawing\RectangleFConverter.cs" />
+    <Compile Include="Drawing\SizeConverter.cs" />
+    <Compile Include="Drawing\SizeFConverter.cs" />
+    <Compile Include="Forms\Layout\DockLayout.cs" />
+    <Compile Include="Forms\Layout\DynamicControl.cs" />
+    <Compile Include="Forms\Layout\DynamicItem.cs" />
+    <Compile Include="Forms\Layout\DynamicLayout.cs" />
+    <Compile Include="Forms\Layout\DynamicTable.cs" />
+    <Compile Include="Forms\Layout\PixelLayout.cs" />
+    <Compile Include="Forms\Layout\TableLayout.cs" />
+    <Compile Include="Forms\Controls\CommonControl.cs" />
+    <Compile Include="Forms\Controls\GridColumn.cs" />
+    <Compile Include="Forms\Controls\GridItem.cs" />
+    <Compile Include="Forms\Controls\GridView.cs" />
+    <Compile Include="Forms\Controls\PasswordBox.cs" />
+    <Compile Include="Forms\Controls\ProgressBar.cs" />
+    <Compile Include="Forms\Cursor.cs" />
+    <Compile Include="Forms\DataStoreVirtualCollection.cs" />
+    <Compile Include="CollectionChangedHandler.cs" />
+    <Compile Include="Forms\ToolBar\ToolBarActionItem.cs" />
+    <Compile Include="Forms\IDataStore.cs" />
+    <Compile Include="Binding\Binding.cs" />
+    <Compile Include="Binding\BindingChangedEventArgs.cs" />
+    <Compile Include="Binding\BindingChangingEventArgs.cs" />
+    <Compile Include="Binding\BindingCollection.cs" />
+    <Compile Include="Binding\BindingExtensions.cs" />
+    <Compile Include="Binding\ColumnBinding.cs" />
+    <Compile Include="Binding\DualBinding.cs" />
+    <Compile Include="Binding\ObjectBinding.cs" />
+    <Compile Include="Binding\ObjectSingleBinding.cs" />
+    <Compile Include="Binding\PropertyBinding.cs" />
+    <Compile Include="Binding\SingleBinding.cs" />
+    <Compile Include="ResourceNotFoundException.cs" />
+    <Compile Include="Forms\Cells\Cell.cs" />
+    <Compile Include="Forms\Cells\CheckBoxCell.cs" />
+    <Compile Include="Forms\Cells\ComboBoxCell.cs" />
+    <Compile Include="Forms\Cells\ImageTextCell.cs" />
+    <Compile Include="Forms\Cells\ImageViewCell.cs" />
+    <Compile Include="Forms\Cells\SingleValueCell.cs" />
+    <Compile Include="Forms\Cells\TextBoxCell.cs" />
+    <Compile Include="Forms\Controls\Grid.cs" />
+    <Compile Include="Forms\Controls\TreeGridItem.cs" />
+    <Compile Include="Forms\Controls\TreeGridView.cs" />
+    <Compile Include="Forms\Controls\TreeItem.cs" />
+    <Compile Include="Threading\Thread.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Forms\" />
-    <Folder Include="Threading\" />
     <Folder Include="Forms\Menu\" />
+    <Folder Include="Threading\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Core" />
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
 </Project>

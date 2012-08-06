@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Linq;
 using SD = System.Drawing;
 using SWF = System.Windows.Forms;
 using Eto.Drawing;
@@ -8,22 +9,24 @@ using Eto.Platform.Windows.Drawing;
 
 namespace Eto.Platform.Windows
 {
-	/// <summary>
-	/// Summary description for MenuBarHandler.
-	/// </summary>
 	public class ImageMenuItemHandler : MenuHandler<SWF.ToolStripMenuItem, ImageMenuItem>, IImageMenuItem, IMenu
 	{
 		Icon icon;
+		bool openedHandled;
 
 		public ImageMenuItemHandler()
 		{
 			Control = new SWF.ToolStripMenuItem();
-			Control.Click += control_Click;
+			Control.Click += (sender, e) => {
+				Widget.OnClick (EventArgs.Empty);
+			};
 		}
 
-		private void control_Click(object sender, EventArgs e)
+		void HandleDropDownOpened (object sender, EventArgs e)
 		{
-			Widget.OnClick(e);
+			foreach (var item in Widget.MenuItems.OfType<MenuActionItem>()) {
+				item.OnValidate (EventArgs.Empty);
+			}
 		}
 
 		#region IMenuItem Members
@@ -79,6 +82,10 @@ namespace Eto.Platform.Windows
 		public void AddMenu(int index, MenuItem item)
 		{
 			Control.DropDownItems.Insert(index, (SWF.ToolStripItem)item.ControlObject);
+			if (!openedHandled) {
+				Control.DropDownOpening += HandleDropDownOpened;
+				openedHandled = true;
+			}
 		}
 
 		public void RemoveMenu(MenuItem item)

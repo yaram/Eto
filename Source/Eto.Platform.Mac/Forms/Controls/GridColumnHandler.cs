@@ -3,63 +3,106 @@ using MonoMac.AppKit;
 using Eto.Forms;
 using MonoMac.Foundation;
 using MonoMac.ObjCRuntime;
+using Eto.Drawing;
+using Eto.Platform.Mac.Drawing;
 
 namespace Eto.Platform.Mac.Forms.Controls
 {
-	public class EtoGridColumnIdentifier : NSObject
+	public interface IDataViewHandler
+	{
+		bool ShowHeader { get; }
+		
+		NSTableView Table { get; }
+		
+		object GetItem (int row);
+		
+		int RowCount { get; }
+		
+		System.Drawing.RectangleF GetVisibleRect ();
+	}
+	
+	public interface IDataColumnHandler
+	{
+		void Setup (int column);
+		
+		NSObject GetObjectValue (object dataItem);
+		
+		void SetObjectValue (object dataItem, NSObject val);
+		
+		GridColumn Widget { get; }
+	}
+	
+	public class EtoDataColumnIdentifier : NSObject
 	{
 		public int Column { get; set; }
 
-		public GridColumnHandler Handler { get; set; }
+		public IDataColumnHandler Handler { get; set; }
 	}
 
-	public class GridColumnHandler : MacObject<NSTableColumn, GridColumn>, IGridColumn
+	public class GridColumnHandler : MacObject<NSTableColumn, GridColumn>, IGridColumn, IDataColumnHandler
 	{
 		Cell dataCell;
+		Font font;
+		
+		public IDataViewHandler DataViewHandler { get; private set; }
 		
 		public int Column { get; private set; }
 		
 		public GridColumnHandler ()
 		{
-			Control = new NSTableColumn {
-				ResizingMask = NSTableColumnResizing.UserResizingMask
-			};
-			
+			Control = new NSTableColumn ();
+			Control.ResizingMask = NSTableColumnResizing.None;
 			Sortable = false;
-			AutoSize = true;
 			HeaderText = string.Empty;
 			Editable = false;
+			AutoSize = true;
 		}
 		
 		public override void Initialize ()
 		{
 			base.Initialize ();
-			this.DataCell = new TextCell (Widget.Generator);
+			this.DataCell = new TextBoxCell (Widget.Generator);
 		}
 		
-		internal void Loaded (GridViewHandler gridHandler, int column)
+		public void Loaded (IDataViewHandler handler, int column)
 		{
 			this.Column = column;
-			if (this.AutoSize) {
+			this.DataViewHandler = handler;
+		}
+		
+		public void Resize ()
+		{
+			var handler = this.DataViewHandler;
+			if (this.AutoSize && handler != null) {
 				Control.SizeToFit ();
 				float width = Control.DataCell.CellSize.Width;
-				if (gridHandler.ShowHeader)
+				var outlineView = handler.Table as NSOutlineView;
+				if (handler.ShowHeader)
 					width = Math.Max (Control.HeaderCell.CellSize.Width, width);
 					
 				if (dataCell != null) {
-					var rect = gridHandler.Table.VisibleRect ();
-					var range = gridHandler.Table.RowsInRect (rect);
+					var rect = handler.GetVisibleRect ();
+					var range = handler.Table.RowsInRect (rect);
+					//var range = new NSRange(0, handler.RowCount);
 					var cellSize = Control.DataCell.CellSize;
 					var dataCellHandler = ((ICellHandler)dataCell.Handler);
 					for (int i = range.Location; i < range.Location + range.Length; i++) {
-						var item = gridHandler.DataStore.GetItem (i);
-						var val = item.GetValue (column);
-						var cellWidth = dataCellHandler.GetPreferredSize (val, cellSize);
+						//var dataCellRow = Control.DataCellForRow(i);
+						//var cellWidth = dataCellRow.CellSize.Width;
+						var cellWidth = GetRowWidth (dataCellHandler, i, cellSize) + 4;
+						if (outlineView != null && Column == 0)
+							cellWidth += (outlineView.LevelForRow (i) + 1) * outlineView.IndentationPerLevel;
 						width = Math.Max (width, cellWidth);
 					}
 				}
 				Control.Width = width;
 			}
+		}
+		
+		protected virtual float GetRowWidth (ICellHandler cell, int row, System.Drawing.SizeF cellSize)
+		{
+			var val = GetObjectValue (DataViewHandler.GetItem (row));
+			return cell.GetPreferredSize (val, cellSize);
 		}
 		
 		public string HeaderText {
@@ -84,22 +127,7 @@ namespace Eto.Platform.Mac.Forms.Controls
 			set;
 		}
 
-		public bool Sortable {
-			get {
-				return Control.SortDescriptorPrototype != null;
-			}
-			set {
-				if (value) {
-					var descriptor = Control.SortDescriptorPrototype;
-					if (descriptor == null) {
-						descriptor = new NSSortDescriptor (Guid.NewGuid ().ToString (), true);
-						Control.SortDescriptorPrototype = descriptor;
-					}
-				} else {
-					Control.SortDescriptorPrototype = null;
-				}
-			}
-		}
+		public bool Sortable { get; set; }
 		
 		public bool Editable {
 			get {
@@ -107,8 +135,9 @@ namespace Eto.Platform.Mac.Forms.Controls
 			}
 			set {
 				Control.Editable = value;
-				if (Control.DataCell != null) {
-					Control.DataCell.Editable = value;
+				if (dataCell != null) {
+					var cellHandler = (ICellHandler)dataCell.Handler;
+					cellHandler.Editable = value;
 				}
 			}
 		}
@@ -130,27 +159,45 @@ namespace Eto.Platform.Mac.Forms.Controls
 				if (dataCell != null) {
 					var editable = this.Editable;
 					var cellHandler = (ICellHandler)dataCell.Handler;
-					cellHandler.ColumnHandler = this;
 					Control.DataCell = cellHandler.Control;
-					Control.DataCell.Editable = editable;
+					cellHandler.ColumnHandler = this;
+					cellHandler.Editable = editable;
 				} else
 					Control.DataCell = null;
 			}
 		}
 		
-		public void Setup (GridViewHandler gridHandler, int column)
+		public void Setup (int column)
 		{
-			Control.Identifier = new EtoGridColumnIdentifier{ Handler = this, Column = column };
+			this.Column = column;
+			Control.Identifier = new EtoDataColumnIdentifier{ Handler = this, Column = column };
 		}
 		
-		public NSObject GetObjectValue (object val)
+		public NSObject GetObjectValue (object dataItem)
 		{
-			return ((ICellHandler)dataCell.Handler).GetObjectValue (val);
+			return ((ICellHandler)dataCell.Handler).GetObjectValue (dataItem);
 		}
 		
-		public object SetObjectValue (NSObject val)
+		public void SetObjectValue (object dataItem, NSObject val)
 		{
-			return ((ICellHandler)dataCell.Handler).SetObjectValue (val);
+			((ICellHandler)dataCell.Handler).SetObjectValue (dataItem, val);
+		}
+
+		GridColumn IDataColumnHandler.Widget {
+			get { return (GridColumn)Widget; }
+		}
+
+		public Font Font {
+			get { return font; }
+			set {
+				font = value;
+				if (font != null) {
+					var fontHandler = (FontHandler)font.Handler;
+					Control.DataCell.Font = fontHandler.Control;
+				}
+				else
+					Control.DataCell.Font = null;
+			}
 		}
 	}
 }

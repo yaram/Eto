@@ -9,6 +9,7 @@ using swm = System.Windows.Media;
 using swc = System.Windows.Controls;
 using System.Runtime.InteropServices;
 using Eto.Platform.Wpf.CustomControls;
+using Eto.Platform.Wpf.Forms.Menu;
 
 namespace Eto.Platform.Wpf.Forms
 {
@@ -50,6 +51,8 @@ namespace Eto.Platform.Wpf.Forms
 					initialClientSize = null;
 				}
 			};
+			// needed to handle Application.Terminating event
+			HandleEvent (Window.ClosingEvent);
 		}
 
 		public override void AttachEvent (string handler)
@@ -117,6 +120,15 @@ namespace Eto.Platform.Wpf.Forms
 			Control.Close ();
 		}
 
+		void CopyKeyBindings (swc.ItemCollection items)
+		{
+			foreach (var item in items.OfType<swc.MenuItem>()) {
+				this.Control.InputBindings.AddRange (item.InputBindings);
+				if (item.HasItems)
+					CopyKeyBindings (item.Items);
+			}
+		}
+
 		public MenuBar Menu
 		{
 			get { return menu; }
@@ -124,7 +136,9 @@ namespace Eto.Platform.Wpf.Forms
 			{
 				menu = value;
 				if (menu != null) {
-					menuHolder.Content = (sw.UIElement)menu.ControlObject;
+					var handler = (MenuBarHandler)menu.Handler;
+					menuHolder.Content = handler.Control;
+					CopyKeyBindings (handler.Control.Items);
 				}
 				else {
 					menuHolder.Content = null;
@@ -198,7 +212,7 @@ namespace Eto.Platform.Wpf.Forms
 			content.Children.Add ((sw.UIElement)layout.ControlObject);
 		}
 
-		public string Text
+		public string Title
 		{
 			get { return Control.Title; }
 			set { Control.Title = value; }

@@ -7,13 +7,14 @@ using Eto.Platform.Mac.Forms.Menu;
 
 namespace Eto.Platform.Mac.Forms.Controls
 {
-	public class TreeViewHandler : MacView<NSScrollView, TreeView>, ITreeView
+	public class TreeViewHandler : MacView<NSOutlineView, TreeView>, ITreeView
 	{
 		ITreeStore top;
-		NSOutlineView outline;
 		ContextMenu contextMenu;
 		Dictionary<ITreeItem, EtoTreeItem> cachedItems = new Dictionary<ITreeItem, EtoTreeItem> ();
 		Dictionary<int, EtoTreeItem> topitems = new Dictionary<int, EtoTreeItem> ();
+		
+		public NSScrollView Scroll { get; private set; }
 		
 		class EtoTreeItem : MacImageData
 		{
@@ -29,17 +30,16 @@ namespace Eto.Platform.Mac.Forms.Controls
 			{
 			}
 			
-			public EtoTreeItem(EtoTreeItem value)
+			public EtoTreeItem (EtoTreeItem value)
+				: base (value)
 			{
 				this.Item = value.Item;
 				this.items = value.items;
 			}
 
-			public ITreeItem Item 
-			{
+			public ITreeItem Item {
 				get { return item; }
-				set
-				{
+				set {
 					item = value;
 					if (item.Image != null)
 						base.Image = Item.Image.ControlObject as NSImage;
@@ -57,7 +57,7 @@ namespace Eto.Platform.Mac.Forms.Controls
 			
 			public override object Clone ()
 			{
-				return new EtoTreeItem(this);
+				return new EtoTreeItem (this);
 			}
 			
 		}
@@ -76,7 +76,30 @@ namespace Eto.Platform.Mac.Forms.Controls
 				var myitem = notification.UserInfo [(NSString)"NSObject"] as EtoTreeItem;
 				if (myitem != null) {
 					myitem.Item.Expanded = false;
+					Handler.Widget.OnCollapsed (new TreeViewItemEventArgs (myitem.Item));
 				}
+			}
+			
+			public override bool ShouldExpandItem (NSOutlineView outlineView, NSObject item)
+			{
+				var myitem = item as EtoTreeItem;
+				if (myitem != null) {
+					var args = new TreeViewItemCancelEventArgs (myitem.Item);
+					Handler.Widget.OnExpanding (args);
+					return !args.Cancel;
+				}
+				return true;
+			}
+			
+			public override bool ShouldCollapseItem (NSOutlineView outlineView, NSObject item)
+			{
+				var myitem = item as EtoTreeItem;
+				if (myitem != null) {
+					var args = new TreeViewItemCancelEventArgs (myitem.Item);
+					Handler.Widget.OnCollapsing (args);
+					return !args.Cancel;
+				}
+				return true;
 			}
 			
 			public override void ItemDidExpand (NSNotification notification)
@@ -84,6 +107,7 @@ namespace Eto.Platform.Mac.Forms.Controls
 				var myitem = notification.UserInfo [(NSString)"NSObject"] as EtoTreeItem;
 				if (myitem != null) {
 					myitem.Item.Expanded = true;
+					Handler.Widget.OnExpanded (new TreeViewItemEventArgs (myitem.Item));
 				}
 			}
 		}
@@ -118,9 +142,9 @@ namespace Eto.Platform.Mac.Forms.Controls
 				EtoTreeItem item;
 				if (!items.TryGetValue (childIndex, out item)) {
 					var parentItem = myitem != null ? myitem.Item : Handler.top;
-					item = new EtoTreeItem{ Item = parentItem.GetChild (childIndex) };
-					Handler.cachedItems.Add (item.Item, item);
-					items.Add (childIndex, item);
+					item = new EtoTreeItem{ Item = parentItem [childIndex] };
+					Handler.cachedItems[item.Item] = item;
+					items[childIndex] = item;
 				}
 				return item;
 			}
@@ -143,31 +167,50 @@ namespace Eto.Platform.Mac.Forms.Controls
 			public object Handler { get; set; }
 		}
 		
-		public override object EventObject {
-			get { return outline; }
+		public override NSView ContainerControl {
+			get { return Scroll; }
 		}
 		
 		public TreeViewHandler ()
 		{
-			outline = new EtoOutlineView { Handler = this };
-			outline.Delegate = new EtoOutlineDelegate{ Handler = this };
-			outline.DataSource = new EtoDataSource{ Handler = this };
-			outline.HeaderView = null;
-			var col = new NSTableColumn ();
-			col.DataCell = new MacImageListItemCell ();
-			//col.ResizingMask = NSTableColumnResizingMask.None;
-			outline.AddColumn (col);
-			outline.OutlineTableColumn = col;
-			outline.AutoresizesOutlineColumn = true;
-			outline.AllowsColumnResizing = false;
-			outline.ColumnAutoresizingStyle = NSTableViewColumnAutoresizingStyle.FirstColumnOnly;
+			Control = new EtoOutlineView { 
+				Handler = this,
+				Delegate = new EtoOutlineDelegate{ Handler = this },
+				DataSource = new EtoDataSource{ Handler = this },
+				HeaderView = null,
+				AutoresizesOutlineColumn = true,
+				AllowsColumnResizing = false,
+				ColumnAutoresizingStyle = NSTableViewColumnAutoresizingStyle.FirstColumnOnly
+			};
+			var col = new NSTableColumn {
+				DataCell = new MacImageListItemCell ()
+			};
 			
-			Control = new NSScrollView ();
-			Control.HasVerticalScroller = true;
-			Control.HasHorizontalScroller = true;
-			Control.AutohidesScrollers = true;
-			Control.BorderType = NSBorderType.BezelBorder;
-			Control.DocumentView = outline;
+			Control.AddColumn (col);
+			Control.OutlineTableColumn = col;
+			
+			Scroll = new NSScrollView {
+				HasVerticalScroller = true,
+				HasHorizontalScroller = true,
+				AutohidesScrollers = true,
+				BorderType = NSBorderType.BezelBorder,
+				DocumentView = Control
+			};
+		}
+		
+		public override void AttachEvent (string handler)
+		{
+			switch (handler) {
+			case TreeView.ExpandedEvent:
+			case TreeView.ExpandingEvent:
+			case TreeView.CollapsedEvent:
+			case TreeView.CollapsingEvent:
+				// handled in delegate
+				break;
+			default:
+				base.AttachEvent (handler);
+				break;
+			}
 		}
 
 		public ITreeStore DataStore {
@@ -176,37 +219,37 @@ namespace Eto.Platform.Mac.Forms.Controls
 				top = value;
 				topitems.Clear ();
 				cachedItems.Clear ();
-				outline.ReloadData ();
+				Control.ReloadData ();
 				ExpandItems (null);
 			}
 		}
 		
 		public ITreeItem SelectedItem {
 			get {
-				var row = outline.SelectedRow;
+				var row = Control.SelectedRow;
 				if (row == -1)
 					return null;
-				var myitem = outline.ItemAtRow (row) as EtoTreeItem;
+				var myitem = Control.ItemAtRow (row) as EtoTreeItem;
 				return myitem.Item;
 			}
 			set {
 				if (value == null)
-					outline.SelectRow (-1, false);
+					Control.SelectRow (-1, false);
 				else {
 					
 					EtoTreeItem myitem;
 					if (cachedItems.TryGetValue (value, out myitem)) {
-						var row = outline.RowForItem (myitem);
+						var row = Control.RowForItem (myitem);
 						if (row >= 0)
-							outline.SelectRow (row, false);
+							Control.SelectRow (row, false);
 					}
 				}
 			}
 		}
 		
 		public override bool Enabled {
-			get { return outline.Enabled; }
-			set { outline.Enabled = value; }
+			get { return Control.Enabled; }
+			set { Control.Enabled = value; }
 		}
 		
 		public ContextMenu ContextMenu {
@@ -214,20 +257,20 @@ namespace Eto.Platform.Mac.Forms.Controls
 			set {
 				contextMenu = value;
 				if (contextMenu != null)
-					outline.Menu = ((ContextMenuHandler)contextMenu.Handler).Control;
+					Control.Menu = ((ContextMenuHandler)contextMenu.Handler).Control;
 				else
-					outline.Menu = null;
+					Control.Menu = null;
 			}
 		}
 		
 		void ExpandItems (NSObject parent)
 		{
-			var ds = outline.DataSource;
-			var count = ds.GetChildrenCount (outline, parent);
+			var ds = Control.DataSource;
+			var count = ds.GetChildrenCount (Control, parent);
 			for (int i=0; i<count; i++) {
-				var item = ds.GetChild (outline, i, parent) as EtoTreeItem;
+				var item = ds.GetChild (Control, i, parent) as EtoTreeItem;
 				if (item != null && item.Item.Expanded) {
-					outline.ExpandItem (item);
+					Control.ExpandItem (item);
 					ExpandItems (item);
 				}
 			}

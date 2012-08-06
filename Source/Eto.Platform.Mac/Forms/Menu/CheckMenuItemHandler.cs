@@ -4,20 +4,25 @@ using Eto.Drawing;
 using Eto.Forms;
 using MonoMac.AppKit;
 using MonoMac.Foundation;
+using MonoMac.ObjCRuntime;
 
 namespace Eto.Platform.Mac
 {
-	public class CheckMenuItemHandler : MenuHandler<NSMenuItem, CheckMenuItem>, ICheckMenuItem
+	public class CheckMenuItemHandler : MenuHandler<NSMenuItem, CheckMenuItem>, ICheckMenuItem, IMenuActionHandler
 	{
-
 		public CheckMenuItemHandler ()
 		{
 			Control = new NSMenuItem ();
-			Control.Activated += delegate {
-				Widget.OnClick (EventArgs.Empty);
-			};
+			Enabled = true;
+			Control.Target = new MenuActionHandler{ Handler = this };
+			Control.Action = MenuActionHandler.selActivate;
 		}
-
+		
+		public void HandleClick ()
+		{
+			Widget.OnClick (EventArgs.Empty);
+		}
+		
 		#region IMenuItem Members
 
 		public bool Enabled {
@@ -50,5 +55,8 @@ namespace Eto.Platform.Mac
 
 		#endregion
 
+		MenuActionItem IMenuActionHandler.Widget {
+			get { return Widget; }
+		}
 	}
 }

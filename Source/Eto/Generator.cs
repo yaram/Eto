@@ -18,9 +18,10 @@ namespace Eto
 	
 	public abstract class Generator
 	{
-		Dictionary<string, ConstructorInfo> constructorMap;
+		Dictionary<string, ConstructorInfo> constructorMap = new Dictionary<string, ConstructorInfo> ();
 		Hashtable attributes;
-		List<Type> types;
+		List<Type> types = new List<Type>();
+		HashSet<Assembly> typeAssemblies = new HashSet<Assembly>();
 		
 		public event EventHandler<WidgetCreatedArgs> WidgetCreated;
 		
@@ -44,9 +45,8 @@ namespace Eto
 		
 		protected Generator ()
 		{
-			constructorMap = new Dictionary<string, ConstructorInfo> ();
+			AddAssembly(this.GetType ().Assembly);
 		}
-		
 		
 		public virtual bool Supports<T> ()
 			where T: IWidget
@@ -64,6 +64,34 @@ namespace Eto
 			}
 		}
 		
+		const string GtkPlatform = "Eto.Platform.GtkSharp.Generator, Eto.Platform.Gtk";
+		const string MacPlatform = "Eto.Platform.Mac.Generator, Eto.Platform.Mac";
+		const string WinPlatform = "Eto.Platform.Windows.Generator, Eto.Platform.Windows";
+		const string WpfPlatform = "Eto.Platform.Wpf.Generator, Eto.Platform.Wpf";
+		
+		public static Generator Detect {
+			get {
+				if (current != null)
+					return current;
+			
+				if (Misc.Platform.IsMac)
+					current = Generator.GetGenerator (MacPlatform, true);
+				else if (Misc.Platform.IsWindows) {
+					current = Generator.GetGenerator (WpfPlatform, true);
+					if (current == null)
+						current = Generator.GetGenerator (WinPlatform, true);
+				}
+				
+				if (current == null && Misc.Platform.IsUnix)
+					current = Generator.GetGenerator (GtkPlatform, true);
+				
+				if (current == null)
+					throw new EtoException ("Could not detect platform. Are you missing a platform assembly?");
+					
+				return current;
+			}
+		}
+		
 		public static void Initialize (Generator generator)
 		{
 			current = generator;
@@ -71,27 +99,34 @@ namespace Eto
 		
 		public static Generator GetGenerator (string generatorType)
 		{
+			return GetGenerator (generatorType, false);
+		}
+
+		internal static Generator GetGenerator (string generatorType, bool allowNull)
+		{
 			Type type = Type.GetType (generatorType);
 			if (type == null) {
-				throw new EtoException("Generator not found. Are you missing the platform assembly?");
+				if (allowNull) 
+					return null;
+				else
+					throw new EtoException ("Generator not found. Are you missing the platform assembly?");
 			}
-			if (type.IsSubclassOf (typeof(Generator))) {
-				return (Generator)Activator.CreateInstance (type);
+			try
+			{
+				return (Generator)Activator.CreateInstance(type);
 			}
-			return null;
+			catch (TargetInvocationException e)
+			{
+				throw e.InnerException;
+			}
 		}
 
 		public ConstructorInfo Add<T> (Type handlerType)
 			where T: IWidget
 		{
-			ConstructorInfo constructor = handlerType.GetConstructor (new Type[] { });
-			if (constructor == null) 
-				throw new ArgumentException (string.Format ("the default constructor for class {0} cannot be found", handlerType.FullName));
-
-			constructorMap.Add (typeof(T).Name, constructor);
-			return constructor;
+			return Add (typeof(T), handlerType);
 		}
-
+		
 		protected ConstructorInfo Find<T> ()
 			where T: IWidget
 		{
@@ -107,7 +142,8 @@ namespace Eto
 				throw new ApplicationException (string.Format ("the type {0} cannot be found in this generator", typeof(T).FullName));
 
 			T val = (T)constructor.Invoke (new object[] { });
-			if (widget != null) widget.Handler = val;
+			if (widget != null)
+				widget.Handler = val;
 			OnWidgetCreated (new WidgetCreatedArgs (val as IWidget));
 			return val;
 		}
@@ -118,10 +154,19 @@ namespace Eto
 			if (constructor == null) 
 				throw new ArgumentException (string.Format ("the default constructor for class {0} cannot be found", handlerType.FullName));
 
-			constructorMap.Add (type.Name, constructor);
+			constructorMap[type.Name] = constructor;
 			return constructor;
 		}
 		
+		public void AddAssembly (Assembly assembly)
+		{
+			if (!typeAssemblies.Contains (assembly)) {
+				
+				typeAssemblies.Add (assembly);
+				types.AddRange(assembly.GetExportedTypes ());
+			}
+		}
+
 		protected ConstructorInfo Find (Type type)
 		{
 			lock (this) {
@@ -130,9 +175,6 @@ namespace Eto
 					return info;
 
 				List<Type > removalTypes = null;
-				if (types == null)
-					types = new List<Type> (this.GetType ().Assembly.GetExportedTypes ());
-				
 				foreach (Type foundType in types) {
 					try {
 						if (foundType.IsClass && !foundType.IsAbstract && type.IsAssignableFrom (foundType)) {
@@ -163,13 +205,12 @@ namespace Eto
 				var val = constructor.Invoke (new object[] { }) as IWidget;
 				if (widget != null) {
 					widget.Handler = val;
-					val.Handler = widget;
+					val.Widget = widget;
 				}
 				OnWidgetCreated (new WidgetCreatedArgs (val));
 				return val;
-			}
-			catch (Exception e) {
-				throw new EtoException (string.Format("Could not create instance of type {0}", type), e);
+			} catch (Exception e) {
+				throw new EtoException (string.Format ("Could not create instance of type {0}", type), e);
 			}
 		}
 

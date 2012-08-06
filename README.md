@@ -37,16 +37,7 @@ This framework was built so that using it in .NET is natural. For example, a sim
 		
 		[STAThread]
 		static void Main () {
-			Generator generator;
-
-			if (Eto.Misc.Platform.IsWindows)
-				generator = Generator.GetGenerator("Eto.Platform.Windows.Generator, Eto.Platform.Windows");
-			else if (Eto.Misc.Platform.IsMac)
-				generator = Generator.GetGenerator("Eto.Platform.Mac.Generator, Eto.Platform.Mac");
-			else // use GTK#
-				generator = Generator.GetGenerator("Eto.Platform.GtkSharp.Generator, Eto.Platform.Gtk");
-
-			var app = new Application(generator);
+			var app = new Application();
 			app.Initialized += delegate {
 				app.MainForm = new MyForm ();
 				app.MainForm.Show ();
@@ -58,6 +49,7 @@ This framework was built so that using it in .NET is natural. For example, a sim
 Applications
 ------------
 * [PabloDraw](http://picoe.ca/products/pablodraw/alpha) - Character based drawing application
+* [JabbR.Eto](https://github.com/cwensley/JabbR.Eto) - JabbR client
 * [Notedown by Mod Monkeys](https://github.com/modmonkeys/Notedown) - Note taking application
 * [Eto.Test](https://github.com/picoe/Eto/tree/master/Source/Eto.Test) - Application to test the functionality of each widget
 

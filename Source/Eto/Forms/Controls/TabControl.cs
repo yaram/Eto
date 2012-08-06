@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Linq;
+
+#if DESKTOP
 using System.Windows.Markup;
+#endif
 
 namespace Eto.Forms
 {
@@ -9,16 +12,20 @@ namespace Eto.Forms
 	{
 		int SelectedIndex { get; set; }
 
-		void AddTab (TabPage page);
+		void InsertTab (int index, TabPage page);
+		
+		void ClearTabs ();
 
-		void RemoveTab (TabPage page);
+		void RemoveTab (int index, TabPage page);
 	}
 	
+#if DESKTOP
 	[ContentProperty("TabPages")]
+#endif
 	public class TabControl : Control
 	{
 		TabPageCollection pages;
-		ITabControl inner;
+		ITabControl handler;
 		
 		public event EventHandler<EventArgs> SelectedIndexChanged;
 
@@ -28,24 +35,28 @@ namespace Eto.Forms
 				SelectedIndexChanged (this, e);
 		}
 		
-		public TabControl ()
-			: this(Generator.Current)
+		public TabControl () : this (Generator.Current)
 		{
 		}
 
-		public TabControl (Generator g) : base(g, typeof(ITabControl))
+		public TabControl (Generator g) : this (g, typeof(ITabControl))
+		{
+		}
+		
+		protected TabControl (Generator generator, Type type, bool initialize = true)
+			: base (generator, type, initialize)
 		{
 			pages = new TabPageCollection (this);
-			inner = (ITabControl)base.Handler;
+			handler = (ITabControl)base.Handler;
 		}
 
 		public int SelectedIndex {
-			get { return inner.SelectedIndex; }
-			set { inner.SelectedIndex = value; }
+			get { return handler.SelectedIndex; }
+			set { handler.SelectedIndex = value; }
 		}
 		
 		public TabPage SelectedPage {
-			get { return TabPages[SelectedIndex]; }
+			get { return SelectedIndex < 0 ? null : TabPages [SelectedIndex]; }
 			set { SelectedIndex = pages.IndexOf (value); }
 		}
 
@@ -53,7 +64,7 @@ namespace Eto.Forms
 			get { return pages; }
 		}
 
-		protected internal void AddTab (TabPage page)
+		internal void InsertTab (int index, TabPage page)
 		{
 			if (Loaded) {
 				page.OnPreLoad (EventArgs.Empty);
@@ -61,13 +72,18 @@ namespace Eto.Forms
 				page.OnLoadComplete (EventArgs.Empty);
 			}
 			page.SetParent (this);
-			inner.AddTab (page);
+			handler.InsertTab (index, page);
 		}
 
-		protected internal void RemoveTab (TabPage page)
+		internal void RemoveTab (int index, TabPage page)
 		{
 			page.SetParent (null);
-			inner.RemoveTab (page);
+			handler.RemoveTab (index, page);
+		}
+		
+		internal void ClearTabs ()
+		{
+			handler.ClearTabs ();
 		}
 
 		public override void OnPreLoad (EventArgs e)

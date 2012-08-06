@@ -21,6 +21,10 @@ namespace Eto.Forms
 			get { return order; }
 			set { order = value; }
 		}
+		
+		public string ToolBarItemStyle { get; set; }
+		
+		public string MenuItemStyle { get; set; }
 	}
 	
 	public partial class ActionItemSeparator : ActionItemBase
@@ -29,49 +33,33 @@ namespace Eto.Forms
 
 		public override void Generate(ToolBar toolBar)
 		{
-			toolBar.Items.Add(new SeparatorToolBarItem(toolBar.Generator) { Type = this.ToolBarType });
+			var tbb = new SeparatorToolBarItem(toolBar.Generator) { Type = this.ToolBarType };
+			if (!string.IsNullOrEmpty (ToolBarItemStyle))
+				tbb.Style = ToolBarItemStyle;
+			toolBar.Items.Add(tbb);
 		}
 
 	}
 
 	public partial class ActionItemSubMenu : ActionItemBase
 	{
-		string subMenuText;
-		string icon;
-		ActionItemCollection actions;
-
 		public ActionItemSubMenu(ActionCollection actions, string subMenuText)
 		{
-			this.actions = new ActionItemCollection(actions);
-			this.subMenuText = subMenuText;
+			this.Actions = new ActionItemCollection(actions);
+			this.SubMenuText = subMenuText;
 		}
 
-		public string Icon
-		{
-			get { return icon; }
-			set { icon = value; }
-		}
+		public string Icon { get; set; }
 
-		public string SubMenuText
-		{
-			get { return subMenuText; }
-			set { subMenuText = value; }
-		}
-
-		public ActionItemCollection Actions
-		{
-			get { return actions; }
-		}
+		public string SubMenuText { get; set; }
+		
+		public ActionItemCollection Actions { get; private set; }
 
 		public override void Generate(ToolBar toolBar)
 		{
 		}
 	}
 	
-
-	/// <summary>
-	/// Summary description for ActionItem.
-	/// </summary>
 	public partial class ActionItem : ActionItemBase
 	{
 		
@@ -95,8 +83,11 @@ namespace Eto.Forms
 		public override void Generate(ToolBar toolBar)
 		{
 			var item = Action.Generate(this, toolBar);
-			if (item != null)
+			if (item != null) {
+				if (!string.IsNullOrEmpty (ToolBarItemStyle))
+					item.Style = ToolBarItemStyle;
 				toolBar.Items.Add (item);
+			}
 		}
 
 	}

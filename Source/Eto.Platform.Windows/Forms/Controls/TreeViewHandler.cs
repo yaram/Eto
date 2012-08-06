@@ -39,6 +39,39 @@ namespace Eto.Platform.Windows.Forms.Controls
 			}
 		}
 		
+		public override void AttachEvent (string handler)
+		{
+			switch (handler) {
+			case TreeView.ExpandingEvent:
+				this.Control.BeforeExpand += (sender, e) => {
+					var args = new TreeViewItemCancelEventArgs(e.Node.Tag as ITreeItem);
+					Widget.OnExpanding (args);
+					e.Cancel = args.Cancel;
+				};
+				break;
+			case TreeView.ExpandedEvent:
+				this.Control.AfterExpand += (sender, e) => {
+					Widget.OnExpanded (new TreeViewItemEventArgs(e.Node.Tag as ITreeItem));
+				};
+				break;
+			case TreeView.CollapsingEvent:
+				this.Control.BeforeCollapse += (sender, e) => {
+					var args = new TreeViewItemCancelEventArgs(e.Node.Tag as ITreeItem);
+					Widget.OnCollapsing (args);
+					e.Cancel = args.Cancel;
+				};
+				break;
+			case TreeView.CollapsedEvent:
+				this.Control.AfterCollapse += (sender, e) => {
+					Widget.OnCollapsed (new TreeViewItemEventArgs(e.Node.Tag as ITreeItem));
+				};
+				break;
+			default:
+				base.AttachEvent (handler);
+				break;
+			}
+		}
+		
 		public ContextMenu ContextMenu {
 			get { return contextMenu; }
 			set {
@@ -54,7 +87,7 @@ namespace Eto.Platform.Windows.Forms.Controls
 		{
 			var count = item.Count;
 			for (int i=0; i<count; i++) {
-				var child = item.GetChild (i);
+				var child = item[i];
 				var node = nodes.Add (child.Key, child.Text, GetImageKey (child.Image));
 				node.Tag = child;
 				

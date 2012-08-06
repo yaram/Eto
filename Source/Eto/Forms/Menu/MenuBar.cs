@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Eto.Forms
 {
@@ -10,40 +11,38 @@ namespace Eto.Forms
 	
 	public class MenuBar : Menu, ISubMenuWidget
 	{
-		IMenuBar inner;
+		IMenuBar handler;
 		MenuItemCollection menuItems;
 		
-		public MenuBar()
-			: this(Generator.Current)
+		public MenuBar () : this (Generator.Current)
 		{
-			
 		}
 
-		public MenuBar(Generator g) : base(g, typeof(IMenuBar))
+		public MenuBar (Generator g) : this (g, typeof(IMenuBar))
 		{
-			//BindingContext = new BindingContext();
-			inner = (IMenuBar)base.Handler;
-			menuItems = new MenuItemCollection(this, inner);
-		}
-
-		public MenuBar(Generator g, ActionItemCollection actionItems) : this(g)
-		{
-			GenerateActions(actionItems);
 		}
 		
-		public void GenerateActions (ActionItemCollection actionItems)
+		protected MenuBar (Generator generator, Type type, bool initialize = true)
+			: base (generator, type, initialize)
 		{
-			foreach (IActionItem ai in actionItems)
-			{
-				ai.Generate(this);
+			handler = (IMenuBar)base.Handler;
+			menuItems = new MenuItemCollection (this, handler);
+		}
+
+		public MenuBar (Generator g, IEnumerable<IActionItem> actionItems) : this(g)
+		{
+			GenerateActions (actionItems);
+		}
+		
+		public void GenerateActions (IEnumerable<IActionItem> actionItems)
+		{
+			foreach (IActionItem ai in actionItems) {
+				ai.Generate (this);
 			}
 		}
 
-		#region IParentMenuWidget implementation
-		
 		public MenuItemCollection MenuItems {
 			get { return menuItems; }
 		}
-		#endregion
 	}
 }

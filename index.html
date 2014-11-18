@@ -1,118 +1,158 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Eto.Forms by picoe</title>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    <title>Eto.Forms by picoe</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
+    <header>
+      <div class="inner">
         <h1>Eto.Forms</h1>
-        <p>Cross platform GUI framework for desktop and mobile applications in .NET</p>
-        <p class="view"><a href="https://github.com/picoe/Eto">View the Project on GitHub <small>picoe/Eto</small></a></p>
-        <ul>
-          <li><a href="https://github.com/picoe/Eto/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/picoe/Eto/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/picoe/Eto">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h2>Discussion</h2>
+        <h2>Cross platform GUI framework for desktop and mobile applications in .NET</h2>
+        <a href="https://github.com/picoe/Eto" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="etoforms" class="anchor" href="#etoforms" aria-hidden="true"><span class="octicon octicon-link"></span></a>Eto.Forms</h1>
+
+<h3>
+<a id="a-cross-platform-desktop-and-mobile-user-interface-framework" class="anchor" href="#a-cross-platform-desktop-and-mobile-user-interface-framework" aria-hidden="true"><span class="octicon octicon-link"></span></a>A cross platform desktop and mobile user interface framework</h3>
+
+<p><a href="https://ci.appveyor.com/project/cwensley/eto/branch/develop"><img src="http://img.shields.io/appveyor/ci/cwensley/eto.svg?style=flat" alt="Build status"></a></p>
+
+<h2>
+<a id="links" class="anchor" href="#links" aria-hidden="true"><span class="octicon octicon-link"></span></a>Links</h2>
 
 <ul>
 <li>Join the <a href="http://groups.google.com/group/eto-forms">forums</a>
 </li>
 <li>Chat in <a href="http://chat.mibbit.com/?server=irc.gimp.org&amp;channel=%23eto.forms">#eto.forms</a> on irc.gimp.org</li>
-</ul><h2>Description</h2>
+<li>Download binaries using NuGet <a href="https://www.nuget.org/packages/Eto.Forms.Sample/"><img src="http://img.shields.io/nuget/v/Eto.Forms.svg?style=flat" alt="NuGet"></a> with Visual Studio or Xamarin Studio.</li>
+<li>For bleeding edge nuget packages, add the MyGet development feed <a href="https://www.myget.org/F/eto/"><img src="http://img.shields.io/myget/eto/vpre/Eto.Forms.svg?style=flat" alt="MyGet"></a> to your sources list.</li>
+</ul>
 
-<p>This framework is built so that you can target multiple platforms with one UI codebase.</p>
+<h2>
+<a id="description" class="anchor" href="#description" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description</h2>
 
-<p>The overall goal of this framework is to expose a common API that can be used to build functional
-applications that run across platforms using their native toolkit.  This will make your applications look and 
-work as if it were a native application on all platforms.</p>
+<p>This framework can be used to build applications that run across multiple platforms using their native toolkit, with an easy to use API. This will make your applications look and work as a native application on all platforms, using a single UI codebase.</p>
 
-<p>For advanced scenarios, you can take advantage of each platform's capabilities by wrapping your common UI
-in a larger application, or even create your own high-level controls with a custom implementations per platform.</p>
+<p>For advanced scenarios, you can take advantage of each platform's capabilities by wrapping your common UI in a larger application, or even create your own high-level controls with a custom implementations per platform.</p>
 
 <p>This framework currently supports creating Desktop applications that work across Windows Forms, WPF, MonoMac, and GTK#.
 There is a Mobile/iOS port in the works, but is considered incomplete.</p>
 
 <p>This framework was built so that using it in .NET is natural. For example, a simple hello-world application might look like:</p>
 
-<pre><code>public class MyForm : Form
+<pre><code>using Eto.Forms;
+using Eto.Drawing;
+
+public class MyForm : Form
 {
     public MyForm ()
     {
-        Text = "My Cross-Platform App";
-        Size = new Size (200, 200);
-        var label = new Label { Text = "Hello World!" };
-        this.AddDockedControl (label);
+        Title = "My Cross-Platform App";
+        ClientSize = new Size(200, 200);
+        Content = new Label { Text = "Hello World!" };
     }
 
     [STAThread]
-    static void Main () {
-        var app = new Application();
-        app.Initialized += delegate {
-            app.MainForm = new MyForm ();
-            app.MainForm.Show ();
-        };
-        app.Run ();
+    static void Main()
+    {
+        new Application().Run(new MyForm());
     }
 }
 </code></pre>
 
-<h2>Applications</h2>
+<h2>
+<a id="applications" class="anchor" href="#applications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Applications</h2>
 
 <ul>
 <li>
-<a href="https://github.com/picoe/Eto/tree/master/Source/Eto.Test">Eto.Test</a> - Application to test the functionality of each widget</li>
-<li>
-<a href="https://github.com/modmonkeys/Notedown">Notedown by Mod Monkeys</a> - Note taking application</li>
+<a href="http://www.manager.io">Manager</a> - Accounting Software</li>
 <li>
 <a href="http://picoe.ca/products/pablodraw/alpha">PabloDraw</a> - Character based drawing application</li>
-</ul><h2>Namespaces</h2>
-
-<ul>
 <li>
-<a href="https://github.com/picoe/Eto/tree/master/Source/Eto/Forms">Eto.Forms</a> - User interface </li>
+<a href="https://github.com/JabbR/JabbR.Desktop">JabbR.Desktop</a> - JabbR client</li>
 <li>
-<a href="https://github.com/picoe/Eto/tree/master/Source/Eto/Drawing">Eto.Drawing</a> - Drawing/graphical routines</li>
+<a href="https://github.com/modmonkeys/Notedown">Notedown</a> - Note taking application</li>
 <li>
-<a href="https://github.com/picoe/Eto/tree/master/Source/Eto/IO">Eto.IO</a> - Disk/Virtual directory abstraction</li>
-<li>Eto.Platform.[Platform] - platform implementations</li>
-</ul><h2>Currently supported targets</h2>
-
-<ul>
-<li>OS X: MonoMac (Cocoa)</li>
-<li>Linux: GTK#</li>
-<li>Windows: Windows Forms or WPF</li>
-</ul><h2>Under development</h2>
-
-<ul>
-<li>iOS using MonoTouch</li>
-</ul><h2>Future plans</h2>
-
-<ul>
-<li>Android using Mono for Android (or equivalent)</li>
+<a href="https://github.com/picoe/Eto/tree/master/Source/Eto.Test">Eto.Test</a> - Application to test the functionality of each widget</li>
 </ul>
-      </section>
+
+<h2>
+<a id="assemblies" class="anchor" href="#assemblies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Assemblies</h2>
+
+<p>Your project only needs to reference Eto.dll, and include the corresponding platform assembly that you wish to target. To run on a Mac platform, you need to <a href="https://github.com/picoe/Eto/wiki/Running-your-application">bundle your app</a>.</p>
+
+<ul>
+<li>Eto.dll - Eto.Forms (UI), Eto.Drawing (Graphics), and platform loading</li>
+<li>Eto.Mac.dll - MonoMac platform for OS X using 32-bit mono</li>
+<li>Eto.Mac64.dll - MonoMac platform for OS X using 64-bit mono</li>
+<li>Eto.XamMac.dll - Xamarin.Mac platform for OS X to embed mono</li>
+<li>Eto.WinForms.dll - Windows Forms platform using GDI+ for graphics</li>
+<li>Eto.Direct2D.dll - Windows Forms platform using Direct2D for graphics</li>
+<li>Eto.Wpf.dll - Windows Presentation Foundation platform</li>
+<li>Eto.Gtk2.dll - Gtk2 platform</li>
+<li>Eto.Gtk3.dll - Gtk3 platform</li>
+<li>Eto.iOS.dll - Xamarin.iOS platform</li>
+<li>Eto.Android.dll - Xamarin.Android platform</li>
+</ul>
+
+<h2>
+<a id="currently-supported-targets" class="anchor" href="#currently-supported-targets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Currently supported targets</h2>
+
+<ul>
+<li>iOS using Xamarin.iOS</li>
+<li>OS X: MonoMac or Xamarin.Mac</li>
+<li>Linux: GTK# 2 or 3</li>
+<li>Windows: Windows Forms (using GDI or Direct2D) or WPF</li>
+</ul>
+
+<h2>
+<a id="under-development" class="anchor" href="#under-development" aria-hidden="true"><span class="octicon octicon-link"></span></a>Under development</h2>
+
+<p>These platforms are currently in development. Any eager bodies willing to help feel free to do so!</p>
+
+<ul>
+<li>Android using Xamarin.Android (Eto.Android)</li>
+<li>Windows 8.x and Windows Phone (Eto.WinRT)</li>
+</ul>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/picoe/Eto/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/picoe/Eto/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/picoe/Eto"></a> is maintained by <a href="https://github.com/picoe">picoe</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
     </div>
-    <footer>
-      <p>Project maintained by <a href="https://github.com/picoe">picoe</a></p>
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
-              <script type="text/javascript">
+
+            <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>

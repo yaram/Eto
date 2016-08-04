@@ -2,10 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Eto
 {
+	public interface IPlatformExtension
+	{
+		void Initialize(Platform platform);
+	}
+
+	[AttributeUsage(AttributeTargets.Assembly, Inherited = false, AllowMultiple = true)]
+	public sealed class PlatformExtensionAttribute : Attribute
+	{
+		public PlatformExtensionAttribute(Type extensionType)
+		{
+			ExtensionType = extensionType;
+		}
+
+		public Type ExtensionType { get; }
+
+		public string PlatformID { get; set; }
+	}
+
+
+
 	/// <summary>
 	/// Arguments for when a widget is created
 	/// </summary>
@@ -269,6 +291,59 @@ namespace Eto
 			return Find(type) != null;
 		}
 
+		static IEnumerable<Assembly> GetReferencedAssemblies()
+		{
+			var asm = typeof(Assembly).GetTypeInfo();
+			var entryAssembly = asm.GetDeclaredMethod("GetEntryAssembly")
+				?.Invoke(null, null) as Assembly;
+			if (entryAssembly != null)
+			{
+				var location = asm.GetDeclaredProperty("Location")
+					?.GetValue(entryAssembly) as string;
+
+				location = Type.GetType("System.IO.Path")
+					?.GetTypeInfo().GetDeclaredMethod("GetDirectoryName")
+					?.Invoke(null, new object[] { location }) as string;
+
+				var files = Type.GetType("System.IO.Directory")
+					?.GetTypeInfo().GetDeclaredMethods("GetFiles")
+					?.FirstOrDefault(r => r.GetParameters().Length == 2)
+					?.Invoke(null, new[] { location, "*.dll" }) as IEnumerable<string>;
+				if (files != null)
+				{
+					var getFileName = Type.GetType("System.IO.Path")
+						?.GetTypeInfo().GetDeclaredMethod("GetFileName");
+					foreach (var file in files.Select(r => getFileName.Invoke(null, new[] { r }) as string))
+					{
+						yield return Assembly.Load(new AssemblyName(file));
+					}
+				}
+
+				/*
+				var referencedAssemblies = asm.GetDeclaredMethod("GetReferencedAssemblies")?.Invoke(entryAssembly, null);
+				return referencedAssemblies as IEnumerable<Assembly> ?? Enumerable.Empty<Assembly>();
+				*/
+			}
+		}
+
+		public void LoadAssembly(AssemblyName assemblyName)
+		{
+			LoadAssembly(Assembly.Load(assemblyName));
+		}
+
+		public void LoadAssembly(Assembly assembly)
+		{
+			foreach (var extensionInfo in assembly.GetCustomAttributes<PlatformExtensionAttribute>())
+			{
+				if (!string.IsNullOrEmpty(extensionInfo.PlatformID) && extensionInfo.PlatformID != ID)
+					continue;
+				var instance = Activator.CreateInstance(extensionInfo.ExtensionType);
+				var extension = instance as IPlatformExtension;
+				extension?.Initialize(this);
+				properties.Add(extension, null);
+			}
+		}
+
 		/// <summary>
 		/// Gets the supported features of the platform.
 		/// </summary>
@@ -364,6 +439,15 @@ namespace Eto
 			if (globalInstance == null)
 				globalInstance = platform;
 			instance.Value = platform;
+			platform.Initialize();
+		}
+
+		void Initialize()
+		{
+			/*foreach (var assembly in GetReferencedAssemblies())
+			{
+				LoadAssembly(assembly);
+			}*/
 		}
 
 		/// <summary>

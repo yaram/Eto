@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
+using Eto.Drawing;
 
 namespace Eto
 {
@@ -606,6 +607,9 @@ namespace Eto
 				return instance.Value != this ? new PlatformContext(this) : null;
 			}
 		}
+
+		Pen.IHandler penHandler;
+		internal Pen.IHandler PenHandler => penHandler ?? (penHandler = CreateShared<Pen.IHandler>());
 
 		/// <summary>
 		/// Invoke the specified action within the context of this platform

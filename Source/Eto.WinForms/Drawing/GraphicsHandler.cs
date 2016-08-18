@@ -5,6 +5,7 @@ using sd = System.Drawing;
 using sdd = System.Drawing.Drawing2D;
 using swf = System.Windows.Forms;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Eto.WinForms.Drawing
 {
@@ -154,6 +155,18 @@ namespace Eto.WinForms.Drawing
 		{
 			SetOffset(false);
             Control.DrawLine(pen.ToSD(), startx, starty, endx, endy);
+		}
+
+		public void DrawLines(Pen pen, IEnumerable<PointF> points)
+		{
+			SetOffset(false);
+			Control.DrawLines(pen.ToSD(), points.Select(p => p.ToSD()).ToArray());
+		}
+
+		public void DrawPolygon(Pen pen, IEnumerable<PointF> points)
+		{
+			SetOffset(false);
+			Control.DrawPolygon(pen.ToSD(), points.Select(p => p.ToSD()).ToArray());
 		}
 
 		public void DrawRectangle(Pen pen, float x, float y, float width, float height)

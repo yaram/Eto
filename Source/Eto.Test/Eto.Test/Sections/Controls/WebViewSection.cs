@@ -25,7 +25,6 @@ namespace Eto.Test.Sections.Controls
 
 			if (webView != null)
 				LoadHtml();
-
 			Content = layout;
 		}
 

@@ -125,8 +125,7 @@ namespace Eto.Mac.Forms
 
 		public void Invoke(Action action)
 		{
-			var thread = NSThread.Current;
-			if (thread != null && thread.IsMainThread)
+			if (NSThread.IsMain)
 				action();
 			else
 			{
@@ -150,6 +149,7 @@ namespace Eto.Mac.Forms
 
 		public void RunIteration()
 		{
+			//NSApplication.SharedApplication.NextEventEx(NSEventMask.AnyEvent, null, NSRunLoop.NSDefaultRunLoopMode, true);
 			NSApplication.SharedApplication.NextEvent(NSEventMask.AnyEvent, NSDate.DistantFuture, NSRunLoop.NSDefaultRunLoopMode, true);
 		}
 

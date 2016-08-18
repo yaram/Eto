@@ -12,18 +12,18 @@ namespace Eto.WinForms.Drawing
 	/// <license type="BSD-3">See LICENSE for full terms</license>
 	public class PenHandler : Pen.IHandler
 	{
-		public object Create (Color color, float thickness)
+		public object Create (Brush brush, float thickness)
 		{
-			var pen = new sd.Pen (color.ToSD (), thickness);
+			var pen = new sd.Pen (brush.ToSD(Rectangle.Empty), thickness);
 			pen.StartCap = pen.EndCap = PenLineCap.Square.ToSD ();
 			pen.DashCap = sd2.DashCap.Flat;
 			pen.MiterLimit = 10f;
 			return pen;
 		}
 
-		public Color GetColor (Pen widget)
+		public Brush GetBrush(Pen widget)
 		{
-			return widget.ToSD ().Color.ToEto ();
+			return null;
 		}
 
 		public void SetColor (Pen widget, Color color)

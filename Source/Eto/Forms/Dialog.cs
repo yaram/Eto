@@ -153,7 +153,7 @@ namespace Eto.Forms
 		/// Gets or sets the default button.
 		/// </summary>
 		/// <remarks>
-		/// On some platforms, the abort button would be called automatically if the user presses the return key
+		/// On some platforms, the default button would be called automatically if the user presses the return key
 		/// on the form
 		/// </remarks>
 		/// <value>The default button.</value>
@@ -254,7 +254,7 @@ namespace Eto.Forms
 			/// Gets or sets the default button.
 			/// </summary>
 			/// <remarks>
-			/// On some platforms, the abort button would be called automatically if the user presses the return key
+			/// On some platforms, the default button would be called automatically if the user presses the return key
 			/// on the form
 			/// </remarks>
 			/// <value>The default button.</value>
